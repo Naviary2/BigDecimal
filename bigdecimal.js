@@ -1,46 +1,38 @@
 "use strict";
 
 /**
- * The BigDecimal class. Each BigDecimal contains the properties:
+ * Each BigDecimal contains the properties:
  * - `number` (BigInt)
  * - `exponent` (Number)
  */
-class BigDecimal {
-    /**
-     * Constructs a BigDecimal.
-     * To cast a BigInt to a BigDecimal, pass the BigInt in for the number parameter, and leave the exponent blank.
-     * @param {object} value - An object containing 1 of 2 properties: `number` or `value`.
-     * Specify the number if you know what the exact value you want is. Specify the value if you have the pre-exponent-bit-shifted value!
-     * @param {number} exponent - The exponent value. This gives the BigDecimal decimal precision.
-     * @returns {BigDecimal} The BigDecimal object with properties `number` (BigInt) and `exponent` (Number).
-     */
-    constructor({ number, value }, exponent = 0) {
-        if (number != null) {
-            if (typeof number !== 'bigint') number = BigInt(number);
-    
-            // The number has to be bit-shifted according to the desired exponent level
-            /** BigInt */
-            this.number = number << BigInt(exponent);
-    
-            /** Number */
-            this.exponent = exponent;
+class BigDecimalClass {
+    /** The exponent-bit-shifted value of the bigint */
+    number;
+    /** The exponent */
+    exponent;
+}
 
-        } else {
-            if (typeof value !== 'bigint') number = BigInt(number);
-    
-            /** BigInt */
-            this.number = value;
-            /** Number */
-            this.exponent = exponent;
-        }
-    }
+/**
+ * 
+ * @param {bigint | string | number} value - The true value of the BigDecimal
+ * @param {number} exponent - The desired exponent, or precision for the BigDecimal
+ * @returns {BigDecimalClass} - The BigDecimal
+ */
+function BigDecimal(value, exponent) {
+    if (typeof value !== 'bigint') value = BigInt(value);
+
+    // The number has to be bit-shifted according to the desired exponent level
+    /** BigInt */
+    const number = value << BigInt(exponent);
+
+    return { number, exponent }
 }
 
 /**
  * Multiplies two BigDecimal numbers.
- * @param {BigDecimal} BigDecimal1 - Factor1
- * @param {BigDecimal} BigDecimal2 - Factor2
- * @returns {BigDecimal} The product of BigDecimal1 and BigDecimal2.
+ * @param {BigDecimalClass} BigDecimal1 - Factor1
+ * @param {BigDecimalClass} BigDecimal2 - Factor2
+ * @returns {BigDecimalClass} The product of BigDecimal1 and BigDecimal2.
  */
 function multiply(BigDecimal1, BigDecimal2) {
     const rawProduct = BigDecimal1.number * BigDecimal2.number;
@@ -53,14 +45,23 @@ function multiply(BigDecimal1, BigDecimal2) {
     const product = rawProduct >> BigInt(exponentDifference);
 
     // Create and return a new BigDecimal object with the adjusted product and the desired exponent
-    return new BigDecimal({ value: product }, desiredExponent);
+    return { number: product, exponent: desiredExponent };
 }
 
+/**
+ * Returns the binary string representation of the BigDecimal.
+ * @param {BigDecimalClass} bigdecimal - The BigDecimal
+ * @returns {string} The value of the BigDecimal in binary. This is exponent-shifted. It is NOT the integer part of the BigDecimal!
+ */
 function getBinaryString(bigdecimal) {
     return bigdecimal.number.toString(2);
 }
 
-// Separates the bigdecimal into its integer and decimal/fractional parts
+/**
+ * Separates the bigdecimal into its integer and decimal/fractional parts
+ * @param {BigDecimalClass} bigdecimal - The BigDecimal
+ * @returns {object} An object with 2 properties, `integer` and `decimal`.
+ */
 function getIntAndDecimalPartsFromBigDecimal(bigdecimal) {
     // Bit shift to the right to get the integer part
     const integer = bigdecimal.number >> BigInt(bigdecimal.exponent);
@@ -75,13 +76,13 @@ function getIntAndDecimalPartsFromBigDecimal(bigdecimal) {
 // Testing
 ////////////////////////////////////////////////////////////////////
 
-const bd1 = new BigDecimal({number: 2n}, 1);
+const bd1 = new BigDecimal(2, 1);
 console.log(`BigDecimal1:`)
 console.log(bd1)
 console.log(`Binary string: ${getBinaryString(bd1)}`)
 console.log(getIntAndDecimalPartsFromBigDecimal(bd1))
 
-const bd2 = new BigDecimal({number: 7n}, 2);
+const bd2 = new BigDecimal(7, 2);
 console.log(`\nBigDecimal2:`)
 console.log(bd2)
 console.log(`Binary string: ${getBinaryString(bd2)}`)
