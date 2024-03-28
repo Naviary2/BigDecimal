@@ -10,7 +10,7 @@ class BigDecimal {
      * Constructs a BigDecimal.
      * To cast a BigInt to a BigDecimal, pass the BigInt in for the number parameter, and leave the exponent blank.
      * @param {object} value - An object containing 1 of 2 properties: `number` or `value`.
-     * Specify the number if you know what the exact value you want is. Specify the value if you have the exponent-bit-shifted value!
+     * Specify the number if you know what the exact value you want is. Specify the value if you have the pre-exponent-bit-shifted value!
      * @param {number} exponent - The exponent value. This gives the BigDecimal decimal precision.
      * @returns {BigDecimal} The BigDecimal object with properties `number` (BigInt) and `exponent` (Number).
      */
@@ -47,10 +47,10 @@ function multiply(BigDecimal1, BigDecimal2) {
     const newExponent = BigDecimal1.exponent + BigDecimal2.exponent;
 
     const desiredExponent = Math.max(BigDecimal1.exponent, BigDecimal2.exponent)
-    const exponentDifference = desiredExponent - newExponent;
+    const exponentDifference = newExponent - desiredExponent;
 
     // Bit shift the rawProduct by the exponent difference to reach the desired exponent level
-    const product = rawProduct << BigInt(exponentDifference);
+    const product = rawProduct >> BigInt(exponentDifference);
 
     // Create and return a new BigDecimal object with the adjusted product and the desired exponent
     return new BigDecimal({ value: product }, desiredExponent);
@@ -81,7 +81,7 @@ console.log(bd1)
 console.log(`Binary string: ${getBinaryString(bd1)}`)
 console.log(getIntAndDecimalPartsFromBigDecimal(bd1))
 
-const bd2 = new BigDecimal({number: 7n}, 0);
+const bd2 = new BigDecimal({number: 7n}, 2);
 console.log(`\nBigDecimal2:`)
 console.log(bd2)
 console.log(`Binary string: ${getBinaryString(bd2)}`)
