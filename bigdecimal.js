@@ -481,6 +481,20 @@ const MathBigDec = {
 
     },
 
+    // Root...
+
+    squareRoot(bd) {
+
+    },
+
+    cubeRoot(bd) {
+
+    },
+
+    root(bd, root) {
+
+    },
+
     // Logarithm...
 
     log2() {
@@ -497,20 +511,6 @@ const MathBigDec = {
     },
 
     logN() {
-
-    },
-
-    // Root...
-
-    squareRoot(bd) {
-
-    },
-
-    cubeRoot(bd) {
-
-    },
-
-    root(bd, root) {
 
     },
 
@@ -917,7 +917,7 @@ const MathBigDec = {
 
 
 
-const bd1 = BigDecimal(0.125, 3);
+const bd1 = BigDecimal(2.75, 2);
 MathBigDec.printInfo(bd1)
 const bd2 = newBigDecimalFromProperties(ONE, 10)
 MathBigDec.printInfo(bd2)
