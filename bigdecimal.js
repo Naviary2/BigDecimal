@@ -353,7 +353,7 @@ const MathBigDec = {
 
     // Subtraction...
 
-    sub() {
+    subtract() {
 
     },
 
@@ -439,6 +439,14 @@ const MathBigDec = {
     },
 
     // Exponent...
+
+    squared() {
+
+    },
+
+    cubed() {
+
+    },
 
     pow() {
 
