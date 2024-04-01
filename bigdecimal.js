@@ -915,15 +915,16 @@ const MathBigDec = {
 
 
 
-const bd1 = BigDecimal(5.234, 10);
-MathBigDec.printInfo(bd1)
-const bd2 = BigDecimal(3.1, 10);
-MathBigDec.printInfo(bd2)
+// const bd1 = BigDecimal(0.125, 3);
+// MathBigDec.printInfo(bd1)
+// const bd2 = newBigDecimalFromProperties(ONE, 10)
+// MathBigDec.printInfo(bd2)
 
 
 
 
 const Decimal = require('decimal.js'); // Decimal libarary
+// const Decimal = require('break_infinity.js') // Break_Infinity library
 const BigNumber = require('bignumber.js'); // BigNumber library
 
 // (function speedTest_Multiply() {
