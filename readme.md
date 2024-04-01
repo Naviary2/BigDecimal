@@ -1,5 +1,7 @@
 # Arbitrary Decimal Precision Arithmetic
 
+**This library is not yet finished.**
+
 This is a library for working with numbers of arbitrary precision that focuses on speed, while having compatibility not only for integers, but decimals as well.
 
 When compared to the popular [Decimal.js](https://github.com/MikeMcl/decimal.js) and [BigNumber.js](https://github.com/MikeMcl/bignumber.js) libraries, this obtains speeds, on average **2-3 times faster** than those, making **BigDecimal.js** a good choice if speed is of more importance!
