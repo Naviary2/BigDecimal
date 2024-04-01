@@ -253,7 +253,8 @@ function validateExponent(number, exponent) {
  * @param {number} exponent - The `exponent` property of the BigDecimal
  */
 function watchExponent(exponent)  {
-    if (exponent > MAX_EXPONENT) throw new Error(`Cannot create a BigDecimal with exponent ${exponent}! Out of range. Max allowed: ${MAX_EXPONENT}`)
+    if (exponent > MAX_EXPONENT)
+        throw new Error(`Cannot create a BigDecimal with exponent ${exponent}! Out of range. Max allowed: ${MAX_EXPONENT}. If you need more range, please increase the MAX_EXPONENT variable.`)
 }
 
 /**
@@ -411,7 +412,7 @@ const MathBigDec = {
         const product = rawProduct >> BigInt(exponentDifference);
     
         // Create and return a new BigDecimal object with the adjusted product and the desired exponent
-        return newBigDecimalFromProperties(product, exponent)
+        return { number: product, exponent }
     },
     
     /**
@@ -424,6 +425,7 @@ const MathBigDec = {
      */
     multiply_add(bd1, bd2) {
         const exponent = bd1.exponent + bd2.exponent
+        watchExponent(exponent); // Protects the exponent from running away to Infinity.
         return MathBigDec.multiply(bd1, bd2, exponent)
     },
     
@@ -915,10 +917,10 @@ const MathBigDec = {
 
 
 
-// const bd1 = BigDecimal(0.125, 3);
-// MathBigDec.printInfo(bd1)
-// const bd2 = newBigDecimalFromProperties(ONE, 10)
-// MathBigDec.printInfo(bd2)
+const bd1 = BigDecimal(0.125, 3);
+MathBigDec.printInfo(bd1)
+const bd2 = newBigDecimalFromProperties(ONE, 10)
+MathBigDec.printInfo(bd2)
 
 
 
