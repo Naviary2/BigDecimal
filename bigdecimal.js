@@ -142,6 +142,9 @@ const getBigintPowerOfTwo = (function() {
  * Each BigDecimal contains the properties:
  * - `number` (BigInt)
  * - `exponent` (Number)
+ * 
+ * BigDecimals are NOT actually an instance of this class.
+ * This class is *only* used for useful JSDoc popups.
  */
 class BigDecimalClass {
     /** The exponent-bit-shifted value of the bigint */
@@ -684,8 +687,9 @@ const MathBigDec = {
     },
 
     /**
-     * Returns the BigDecimal's `number` property in binary form, **exactly** like how computers store them.
-     * This is **not** two's compliment notation. Negative values have all their bits flipped, and then added 1.
+     * Returns the BigDecimal's `number` property in binary form, **exactly** like how computers store them,
+     * in two's complement notation. Negative values have all their bits flipped, and then added 1.
+     * To multiply by -1, reverse all the bits, and add 1. This works both ways.
      * 
      * For readability, if the number is negative, a space will be added after the leading '1' sign.
      * @param {BigDecimalClass} bd - The BigDecimal
@@ -701,7 +705,7 @@ const MathBigDec = {
         // https://math.stackexchange.com/questions/1416606/how-to-find-the-amount-of-binary-digits-in-a-decimal-number/1416817#1416817
         const bitCount = isNegative ? MathBigInt.log2(MathBigInt.abs(bd.number)) + TWO // Plus 2 to account for the sign bit
                      /* positive */ : MathBigInt.log2(           bd.number ) + ONE
-        // Alternate method to calculate the bit count that first converts the number to two's compliment form:
+        // Alternate method to calculate the bit count that first converts the number to two's complement notation:
         // const bitCount = bigdecimal.number.toString(2).length;
     
         // If the bit length is 5, the resulting mask would be '10000'
@@ -890,8 +894,9 @@ const MathBigDec = {
      * @returns {number} The number of bits
      */
     getBitLength(bd) {
-        // Conveniently, two's compliment notation contains a - sign at the beginning for negatives,
-        // subsequently in computer binary, a '1' bit is used for the sign.
+        // Conveniently, converted to a string, two's complement notation
+        // contains a - sign at the beginning for negatives,
+        // subsequently in the computer, a '1' bit is used for the sign.
         // This means the bit length is still the same!
         return bd.number.toString(2).length;
     }
