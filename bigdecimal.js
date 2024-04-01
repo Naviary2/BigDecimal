@@ -3,10 +3,6 @@
 /**
  * TODO:
  * 
- * - Add license information.
- * 
- * - Add a README.md file.
- * 
  * - In MathBigDec.setExponent(), add a parameter `round`.
  * Take inspiration from MathBigDec.toBigInt() for how to round in binary.
  * 

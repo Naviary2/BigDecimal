@@ -6,7 +6,7 @@ Javascript's BigInt primitive is one of the fastest methods for performing arbit
 
 This allows us to work with arbitrary-sized numbers **with** arbitrary levels of decimal precision!
 
-When compared to the popular [Decimal.js](https://github.com/MikeMcl/decimal.js) and [BigNumber.js](https://github.com/MikeMcl/bignumber.js) libraries, this obtains speeds, on average **2-3 times faster**, than those, making **BigDecimal.js** a good choice if speed is of more importance.
+When compared to the popular [Decimal.js](https://github.com/MikeMcl/decimal.js) and [BigNumber.js](https://github.com/MikeMcl/bignumber.js) libraries, this obtains speeds, on average **2-3 times faster** than those, making **BigDecimal.js** a good choice if speed is of more importance!
 
 ---
 
