@@ -3,6 +3,8 @@
 /**
  * TODO:
  * 
+ * - Add license information.
+ * 
  * - Add a README.md file.
  * 
  * - In MathBigDec.setExponent(), add a parameter `round`.
@@ -579,11 +581,12 @@ const MathBigDec = {
      * Converts a BigDecimal to a string. This returns its EXACT value!
      * Using this string to construct a new BigDecimal will always result in a BigDecimal with the same value.
      * 
-     * Note: Due to the nature of all binary decimals having denominators of powers of 2,
-     * it can appear that they have more decimal place precision than they actually do.
-     * For example, 1/1024 = 0.009765625, which at first glance *looks* like it has
+     * Note: Due to the nature of all binary fractions having power-of-2 denominators,
+     * this string can make it appear as if they have more decimal digit precision than they actually do.
+     * For example, 1/1024 = 0.0009765625, which at first glance *looks* like it has
      * 9 digits of decimal precision, but in all effectiveness it only has 3 digits of precision,
      * because a single increment to 2/1024 now yields 0.001953125, which changed **every single** digit!
+     * The effective decimal digits can be calculated using MathBigDec.getEffectiveDecimalPlaces().
      * @param {BigDecimalClass} bigdecimal - The BigDecimal
      * @returns {string} The string with the exact value
      */
@@ -695,7 +698,6 @@ const MathBigDec = {
      * TODO: Add a `round` parameter! Take inspiration from MathBigDec.toBigInt()!
      * 
      * Truncates a given BigDecimal to the desired exponent level.
-     * 
      * If the provided exponent is higher than the existing exponent, no truncating will occur.
      * @param {BigDecimalClass} bigdecimal - The BigDecimal
      * @param {number} exponent - The desired exponent
@@ -875,62 +877,66 @@ const MathBigDec = {
 
 
 
-// const bd1 = BigDecimal(5.234, 10);
-// MathBigDec.printInfo(bd1)
-// const bd2 = BigDecimal(3.1, 34);
-// MathBigDec.printInfo(bd2)
+
+const bd1 = BigDecimal(5.234, 10);
+MathBigDec.printInfo(bd1)
+const bd2 = BigDecimal(3.1, 10);
+MathBigDec.printInfo(bd2)
 
 
-(function speedTest_Multiply() {
 
-    const factor1 = 17.111222333444;
-    const factor2 = 5.55;
 
-    const bitsOfPrecision = 50
-    const f1 = new BigDecimal(factor1, bitsOfPrecision);
-    const f2 = new BigDecimal(factor2, bitsOfPrecision);
+const Decimal = require('decimal.js'); // Decimal libarary
+const BigNumber = require('bignumber.js'); // BigNumber library
 
-    console.log(`\nMultiplying factors ${factor1} and ${factor2} together...`)
-    console.log(`Expected results: ${factor1 * factor2}\n`)
+// (function speedTest_Multiply() {
+
+//     const factor1 = 17.111222333444;
+//     const factor2 = 5.55;
+
+//     const bitsOfPrecision = 50
+//     const f1 = new BigDecimal(factor1, bitsOfPrecision);
+//     const f2 = new BigDecimal(factor2, bitsOfPrecision);
+
+//     console.log(`\nMultiplying factors ${factor1} and ${factor2} together...`)
+//     console.log(`Expected results: ${factor1 * factor2}\n`)
     
-    const loopCount = 10**7;
-    let product;
+//     const loopCount = 10**7;
+//     let product;
     
-    // This BigDecimal library
-    console.time('BigDecimal')
-    for (let i = 0; i < loopCount; i++) {
-        product = MathBigDec.multiply_max(f1, f2);
-    }
-    console.timeEnd('BigDecimal')
-    console.log(`BigDecimal product: ${MathBigDec.toString(product)}`)
-    console.log(`Bits of precision used: ${product.exponent}`)
-    console.log(`Approximate digits of precision used: ${MathBigDec.getEffectiveDecimalPlaces(product)}`)
-    console.log('')
-    
-    
-    // Decimal libarary
-    const Decimal = require('decimal.js');
-    const d1 = new Decimal(factor1);
-    const d2 = new Decimal(factor2);
-    console.time('Decimal')
-    for (let i = 0; i < loopCount; i++) {
-        product = d1.times(d2);
-    }
-    console.timeEnd('Decimal')
-    console.log(`Decimal product: ${product.toString()}`)
-    console.log(`Decimal digits of precision used: ${product.precision()}`)
-    console.log('')
+//     // This BigDecimal library
+//     console.time('BigDecimal')
+//     for (let i = 0; i < loopCount; i++) {
+//         product = MathBigDec.multiply_max(f1, f2);
+//     }
+//     console.timeEnd('BigDecimal')
+//     console.log(`BigDecimal product: ${MathBigDec.toString(product)}`)
+//     console.log(`Bits of precision used: ${product.exponent}`)
+//     console.log(`Approximate digits of precision used: ${MathBigDec.getEffectiveDecimalPlaces(product)}`)
+//     console.log('')
     
     
-    // BigNumber library
-    const BigNumber = require('bignumber.js');
-    const b1 = new BigNumber(factor1);
-    const b2 = new BigNumber(factor2);
-    console.time('BigNumber')
-    for (let i = 0; i < loopCount; i++) {
-        product = b1.times(b2);
-    }
-    console.timeEnd('BigNumber')
-    console.log(`BigNumber product: ${product.toString()}`)
-    console.log(`BigNumber digits of precision used: ${product.precision()}`)
-})();
+//     // Decimal libarary
+//     const d1 = new Decimal(factor1);
+//     const d2 = new Decimal(factor2);
+//     console.time('Decimal')
+//     for (let i = 0; i < loopCount; i++) {
+//         product = d1.times(d2);
+//     }
+//     console.timeEnd('Decimal')
+//     console.log(`Decimal product: ${product.toString()}`)
+//     console.log(`Decimal digits of precision used: ${product.precision()}`)
+//     console.log('')
+    
+    
+//     // BigNumber library
+//     const b1 = new BigNumber(factor1);
+//     const b2 = new BigNumber(factor2);
+//     console.time('BigNumber')
+//     for (let i = 0; i < loopCount; i++) {
+//         product = b1.times(b2);
+//     }
+//     console.timeEnd('BigNumber')
+//     console.log(`BigNumber product: ${product.toString()}`)
+//     console.log(`BigNumber digits of precision used: ${product.precision()}`)
+// })();
