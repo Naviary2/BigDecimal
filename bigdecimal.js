@@ -1,5 +1,33 @@
 "use strict";
 
+/**
+ * TODO:
+ * 
+ * - In MathBigDec.setExponent(), add a parameter `round`.
+ * Take inspiration from MathBigDec.toBigInt() for how to round in binary.
+ * 
+ * - In MathBigDec.multiply(), add a parameter `round`. Currently it is truncating all products.
+ * BUT, does this mean less efficiency? Is it better to increase the exponent
+ * of all BigDecimals by 1 in order to avoid the need to round?
+ * 
+ * - Fully automate the precision. Like, if you only need 4 bits of decimal to represent '1.1',
+ * always add a constant of 30 extra bits of precision more than needed, making it 34.
+ * Use MathBigDec.howManyBitsForDigitsOfPrecision() to calculate the base amount, then add 30.
+ * Add options for high precision, medium, and low, for adding different base amounts.
+ * 
+ * - During BigDecimal construction, if a number can be **exactly** represented
+ * with less bits, then use less bits! This includes integers, and
+ * fractions with power-of-2 denominators, like 1, 1.5, 1.25, 1.375, etc.
+ * They can all be represented perfectly with less bits, may as well!
+ * 
+ * - Allow the construction of a BigDecimal by passing in strings with decimal values.
+ * You can reverse the MathBigDec.toString() algorithm to accomplish this.
+ * Currently only passing in integer strings are allowed.
+ * 
+ * - Finish writing all remaining arithmetic methods of MathBigDec!
+ * 
+ */
+
 // Useful Number constants
 const LOG_TWO = Math.log(2);
 
@@ -335,6 +363,8 @@ const MathBigDec = {
      * However, if you're only multiplying integers, this doesn't matter.
      * 
      * TODO: Round instead of truncating lost values.
+     * BUT, does this mean less efficiency? Is it better to increase the exponent
+     * by 1 in all scenarios to avoid having to round?
      * @param {BigDecimalClass} bd1 - Factor1
      * @param {BigDecimalClass} bd2 - Factor2
      * @param {string} exponent - The desired exponent value for the product, or number of bits to allocate for the decimal part.
