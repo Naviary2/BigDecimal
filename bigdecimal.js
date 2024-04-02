@@ -29,10 +29,6 @@
 /**
  * TODO:
  * 
- * - In MathBigDec.multiply(), add a parameter `round`. Currently it is truncating all products.
- * BUT, does this mean less efficiency? Is it better to increase the exponent
- * of all BigDecimals by 1 in order to avoid the need to round?
- * 
  * - Fully automate the precision. Like, if you only need 4 bits of decimal to represent '1.1',
  * always add a constant of 30 extra bits of precision more than needed, making it 34.
  * Use MathBigDec.howManyBitsForDigitsOfPrecision() to calculate the base amount, then add 30.
@@ -411,16 +407,14 @@ const MathBigDec = {
      * I recommend that exponent be atleast 50. This yields approximately
      * 15 digits of precision which is about how many javascript's doubles have.
      * However, if you're only multiplying integers, this doesn't matter.
-     * 
-     * TODO: Round instead of truncating lost values.
-     * BUT, does this mean less efficiency? Is it better to increase the exponent
-     * by 1 in all scenarios to avoid having to round?
      * @param {BigDecimalClass} bd1 - Factor1
      * @param {BigDecimalClass} bd2 - Factor2
      * @param {string} exponent - The desired exponent value for the product, or number of bits to allocate for the decimal part.
      * @returns {BigDecimalClass} The product of BigDecimal1 and BigDecimal2.
      */
     multiply(bd1, bd2, exponent) {
+        watchExponent(exponent); // Protects the exponent from running away to Infinity.
+
         const rawProduct = bd1.number * bd2.number;
         const newExponent = bd1.exponent + bd2.exponent;
      
@@ -443,7 +437,6 @@ const MathBigDec = {
      */
     multiply_add(bd1, bd2) {
         const exponent = bd1.exponent + bd2.exponent
-        watchExponent(exponent); // Protects the exponent from running away to Infinity.
         return MathBigDec.multiply(bd1, bd2, exponent)
     },
     
@@ -935,9 +928,32 @@ const MathBigDec = {
 
 
 
-
-const bd1 = BigDecimal(-1.51, 8);
+const bd1 = BigDecimal(5.25, 2);
 MathBigDec.printInfo(bd1)
+const bd2 = BigDecimal(3.36, 7);
+MathBigDec.printInfo(bd2)
+
+
+// (function speedTest_Miscellanious() {
+
+//     const repeat = 10**6;
+//     let product;
+    
+//     console.time('No round');
+//     for (let i = 0; i < repeat; i++) {
+//         product = MathBigDec.multiply(bd1, bd2, 9);
+//     }
+//     console.timeEnd('No round');
+//     MathBigDec.printInfo(product);
+    
+//     console.time('Round');
+//     for (let i = 0; i < repeat; i++) {
+//         product = MathBigDec.multiply(bd1, bd2, 7);
+//     }
+//     console.timeEnd('Round');
+//     MathBigDec.printInfo(product);
+// })();
+
 
 
 
