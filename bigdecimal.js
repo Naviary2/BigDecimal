@@ -29,9 +29,6 @@
 /**
  * TODO:
  * 
- * - In MathBigDec.setExponent(), add a parameter `round`.
- * Take inspiration from MathBigDec.toBigInt() for how to round in binary.
- * 
  * - In MathBigDec.multiply(), add a parameter `round`. Currently it is truncating all products.
  * BUT, does this mean less efficiency? Is it better to increase the exponent
  * of all BigDecimals by 1 in order to avoid the need to round?
@@ -366,7 +363,28 @@ const MathBigInt = {
         let leastSignificantBits = bigint & bitmask;
 
         return leastSignificantBits;
-    }
+    },
+
+    /**
+     * Gets the bit at the specified position from the right. 1-based
+     * @param {bigint} bigint - The BigInt
+     * @param {number} position - The position from right. 1-based
+     * @returns {number} 1 or 0
+     */
+    getBitAtPositionFromRight(bigint, position) {
+        // Guard clauses
+        if (typeof bigint !== 'bigint') throw new Error(`bigint must be of bigint type! Received: ${typeof bigint}`)
+        if (typeof position !== 'number') throw new Error(`Position must be of number type! Received: ${typeof position}`)
+        if (position < 1) throw new Error(`Cannot get bit at position ${position}! Must be 1+.`)
+
+        // Create a mask where there is a single 1 at the position.
+        // For example, if our position is 5, the resulting bitmask is '10000'.
+        let bitmask = ONE << (BigInt(position) - ONE);
+        // Apply bitwise AND operation with the bitmask to test if this bit is a 1
+        const result = bigint & bitmask;
+        // If the result is greater than zero, we know the bit is a 1!
+        return result > ZERO ? 1 : 0;
+    },
 }
 
 
@@ -550,21 +568,13 @@ const MathBigDec = {
     
         if (!round || bd.exponent === 0) return integerPart;
     
-        // We are rounding the decimal digits!...
-    
+        // We are rounding the decimal digits!
         // To round in binary is easy. If the first digit (or most-significant digit)
         // of the decimal portion is a 1, we round up! If it's 0, we round down.
-        // Let's create a mask to find the value of the first decimal bit!
-    
-        // Create a mask where there is a single 1 at position 'exponent'.
-        // For example, if our exponent is 5, the resulting bitmask is '10000'.
-        let bitmask = ONE << (exponent_bigint - ONE);
-    
-        // Apply bitwise AND operation with the bitmask to test if this bit is a 1
-        const result = bd.number & bitmask;
-    
+
+        const bitAtPosition = MathBigInt.getBitAtPositionFromRight(bd.number, bd.exponent)
         // If the result is greater than zero, we know the bit is a 1! Round up.
-        if (result > ZERO) integerPart += ONE;
+        if (bitAtPosition === 1) integerPart++;
         return integerPart;
     },
 
@@ -733,18 +743,27 @@ const MathBigDec = {
     // Rounding & Truncating...
 
     /**
-     * TODO: Add a `round` parameter! Take inspiration from MathBigDec.toBigInt()!
-     * 
      * Truncates a given BigDecimal to the desired exponent level.
      * If the provided exponent is higher than the existing exponent, no truncating will occur.
-     * @param {BigDecimalClass} bigdecimal - The BigDecimal
+     * @param {BigDecimalClass} bd - The BigDecimal
      * @param {number} exponent - The desired exponent
+     * @param {boolean} round - Whether or not to round instead of truncating.
      */
-    setExponent(bigdecimal, exponent) {
-        if (exponent < 0) { exponent = 0; console.error("Cannot set exponent of BigDecimal below 0! Setting to 0...") }
-        const difference = exponent - bigdecimal.exponent;
-        bigdecimal.number = bigdecimal.number << BigInt(difference)
-        bigdecimal.exponent = exponent;
+    setExponent(bd, exponent, round = true) {
+        if (exponent < 0) throw new Error(`Cannot set exponent of BigDecimal below 0! Received: ${exponent}`)
+        watchExponent(exponent); // Protects the exponent from running away to Infinity.
+        const difference = bd.exponent - exponent;
+
+        let roundUp = false;
+        if (round && difference > 0) { // Only round if we're shifting right.
+            // What is the bit's positition we need to round up if it's a '1'?
+            const bitPosition = difference;
+            roundUp = MathBigInt.getBitAtPositionFromRight(bd.number, bitPosition) === 1
+        }
+        
+        bd.number >>= BigInt(difference);
+        if (roundUp) bd.number++;
+        bd.exponent = exponent;
     },
 
     /**
@@ -917,10 +936,8 @@ const MathBigDec = {
 
 
 
-const bd1 = BigDecimal(2.75, 2);
+const bd1 = BigDecimal(-1.51, 8);
 MathBigDec.printInfo(bd1)
-const bd2 = newBigDecimalFromProperties(ONE, 10)
-MathBigDec.printInfo(bd2)
 
 
 
