@@ -1,6 +1,6 @@
 
 /**
- * bigdecimal.js v0.1.0 Beta
+ * bigdecimal.js v0.1.1 Beta
  * High performance arbitrary-precision decimal type of Javascript.
  * https://github.com/Naviary2/BigDecimal
  * Copyright (c) 2024 Naviary (www.InfiniteChess.org) <infinitechess.org@gmail.com>
