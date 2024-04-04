@@ -137,7 +137,7 @@ const getBigintPowerOfTwo = (function() {
 //  * 
 //  * @param {bigint | string | number} number - The true value of the BigDecimal
 //  * @param {number | undefined} [exponent] - Optional. The desired exponent, or precision for the BigDecimal. 0+, where 0 is integer-level precision. If left undefined, DEFAULT_PRECISION will be used.
-//  * @returns {BigDecimalClass} - The BigDecimal
+//  * @returns {BigDecimal} - The BigDecimal
 //  */
 // function BigDecimal(number, exponent) {
 //     if (typeof number !== 'number' || Number.isInteger(number)) { // An integer was passed in...
@@ -564,8 +564,8 @@ const MathBigDec = {
 
     /**
      * Returns a new BigDecimal that is the absolute value of the provided BigDecimal
-     * @param {BigDecimalClass} bd - The BigDecimal
-     * @returns {BigDecimalClass} The absolute value
+     * @param {BigDecimal} bd - The BigDecimal
+     * @returns {BigDecimal} The absolute value
      */
     abs(bd) {
 
@@ -573,8 +573,8 @@ const MathBigDec = {
 
     /**
      * Negates the provided BigDecimal, modifying the original.
-     * @param {BigDecimalClass} bd - The BigDecimal
-     * @returns {BigDecimalClass} The negated BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
+     * @returns {BigDecimal} The negated BigDecimal
      */
     negate(bd) {
         bd.bigint *= NEGONE;
@@ -584,7 +584,7 @@ const MathBigDec = {
 
     /**
      * Converts a BigDecimal to a BigInt, rounding to the nearest integer by default.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      * @param {boolean} [round] - If *true*, it will round to the nearest BigInt. If *false*, it will truncate the decimal value, rounding in the negative direction. Default: *true*
      * @returns {bigint} The BigInt
      */
@@ -601,7 +601,6 @@ const MathBigDec = {
         // of the decimal portion is a 1, we round up! If it's 0, we round down.
 
         const bitAtPosition = BigIntMath.getBitAtPositionFromRight(bd.bigint, bd.exponent)
-        // If the result is greater than zero, we know the bit is a 1! Round up.
         if (bitAtPosition === 1) integerPart++;
         return integerPart;
     },
@@ -609,7 +608,7 @@ const MathBigDec = {
     /**
      * Converts a BigDecimal to a number (javascript double).
      * If it's greater than Number.MAX_VALUE, this will return Infinity or -Infinity likewise.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      * @returns {number} The number as a normal javascript double
      */
     toNumber(bd) {
@@ -662,7 +661,7 @@ const MathBigDec = {
      * 9 digits of decimal precision, but in all effectiveness it only has 3 digits of precision,
      * because a single increment to 2/1024 now yields 0.001953125, which changed **every single** digit!
      * The effective decimal digits can be calculated using MathBigDec.getEffectiveDecimalPlaces().
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      * @returns {string} The string with the exact value
      */
     toString(bd) {
@@ -732,7 +731,7 @@ const MathBigDec = {
      * To multiply by -1, reverse all the bits, and add 1. This works both ways.
      * 
      * For readability, if the number is negative, a space will be added after the leading '1' sign.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      * @returns {string} The binary string. If it is negative, the leading `1` sign will have a space after it for readability.
      */
     toBinary(bd) {
@@ -773,7 +772,7 @@ const MathBigDec = {
     /**
      * Truncates a given BigDecimal to the desired exponent level.
      * If the provided exponent is higher than the existing exponent, no truncating will occur.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      * @param {number} exponent - The desired exponent
      * @param {boolean} round - Whether or not to round instead of truncating.
      */
@@ -798,7 +797,7 @@ const MathBigDec = {
      * TO BE WRITTEN...
      * 
      * Rounds the BigDecimal towards positive Infinity.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      */
     ceil(bd) {
 
@@ -808,7 +807,7 @@ const MathBigDec = {
      * TO BE WRITTEN...
      * 
      * Rounds the BigDecimal towards negative Infinity.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      */
     floor(bd) {
 
@@ -818,7 +817,7 @@ const MathBigDec = {
      * TO BE WRITTEN...
      * 
      * Rounds the BigDecimal away from zero.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      */
     roundUp(bd) {
 
@@ -828,7 +827,7 @@ const MathBigDec = {
      * TO BE WRITTEN...
      * 
      * Rounds the BigDecimal towards zero.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      */
     roundDown(bd) {
 
@@ -843,8 +842,8 @@ const MathBigDec = {
      * To do this, it first tries to convert them into the same exponent level,
      * because BigDecimals of different exponent levels may still be equal,
      * so it's not enough to compare their `number` properties.
-     * @param {BigDecimalClass} bd1 - BigDecimal1
-     * @param {BigDecimalClass} bd2 - BigDecimal2
+     * @param {BigDecimal} bd1 - BigDecimal1
+     * @param {BigDecimal} bd2 - BigDecimal2
      * @returns {boolean} *true* if they are equal
      */
     areEqual(bd1, bd2) {
@@ -909,7 +908,7 @@ const MathBigDec = {
     /**
      * Estimates the number of effective decimal place precision of a BigDecimal.
      * This is a little less than one-third of the exponent, or the decimal bit-count precision.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      * @returns {number} The number of estimated effective decimal places.
      */
     getEffectiveDecimalPlaces(bd) {
@@ -926,7 +925,7 @@ const MathBigDec = {
     /**
      * Prints useful information about the BigDecimal, such as its properties,
      * binary string, exact value as a string, and converted back to a number.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      */
     printInfo(bd) {
         console.log(bd)
@@ -939,7 +938,7 @@ const MathBigDec = {
 
     /**
      * Calculates the number of bits used to store the `number` property of the BigDecimal.
-     * @param {BigDecimalClass} bd - The BigDecimal
+     * @param {BigDecimal} bd - The BigDecimal
      * @returns {number} The number of bits
      */
     getBitLength(bd) {
