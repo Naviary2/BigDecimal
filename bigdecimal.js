@@ -293,7 +293,6 @@ class BigDecimal {
         } else throw new Error(`You must choose between specifying the number, or bigint & exponent parameters.`)
 
         if (typeof precision !== 'number') throw new Error(`Precision property must be of type number! Received: ${typeof precision}`)
-        if (typeof precision !== 'number') throw new Error(`Precision property must be of type number! Received: ${typeof precision}`)
         if (precision < 0 || precision > MAX_EXPONENT) throw new Error(`Precision property must be between 0 and ${MAX_EXPONENT}! Received: ${precision}`)
         this.precision = precision;
     }
