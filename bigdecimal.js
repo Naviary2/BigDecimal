@@ -40,15 +40,6 @@
  * when the number gets smaller and smaller? It would eventually truncate to zero. Do we need a
  * way to dynamically increase the precision when the number gets smaller and smaller?
  * 
- * - During BigDecimal construction, if a number can be **exactly** represented
- * with less bits, then use less bits! This includes integers, and
- * fractions with power-of-2 denominators, like 1, 1.5, 1.25, 1.375, etc.
- * They can all be represented perfectly with less bits, may as well!
- * 
- * - Allow the construction of a BigDecimal by passing in strings with decimal values.
- * You can reverse the MathBigDec.toString() algorithm to accomplish this.
- * Currently only passing in integer strings are allowed.
- * 
  * - Can a faster toBinary() method be written that uses toString(2)
  * instead of iterating through every bit in the bigint?
  * 
