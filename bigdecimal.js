@@ -1,6 +1,6 @@
 
 /**
- * bigdecimal.js v0.1.1 Beta
+ * bigdecimal.js v0.1.2 Beta
  * High performance arbitrary-precision decimal type of Javascript.
  * https://github.com/Naviary2/BigDecimal
  * Copyright (c) 2024 Naviary (www.InfiniteChess.org) <infinitechess.org@gmail.com>
@@ -29,10 +29,16 @@
 /**
  * TODO:
  * 
- * - Fully automate the precision. Like, if you only need 4 bits of decimal to represent '1.1',
- * always add a constant of 30 extra bits of precision more than needed, making it 34.
- * Use MathBigDec.howManyBitsForDigitsOfPrecision() to calculate the base amount, then add 30.
- * Add options for high precision, medium, and low, for adding different base amounts.
+ * - Move most of the MathBigDec functions into the BigDecimal class as static methods.
+ * After this we could, for example, do mybigdecimal.multiply(bigdecfactor2)
+ * to modify the bigdecimal we called .multiply() on.
+ * 
+ * - Decide how we want to handle the precision when you pass in a string for the BigDecimal.
+ * For example, if 1.111222333444555666777888999 is passed in, should the precision be a set
+ * 50 bits, or should the precision be 50 bits *more* than the minimum amount of bits to round
+ * to that value? And if the precision is always constant, how would we handle repeated division
+ * when the number gets smaller and smaller? It would eventually truncate to zero. Do we need a
+ * way to dynamically increase the precision when the number gets smaller and smaller?
  * 
  * - During BigDecimal construction, if a number can be **exactly** represented
  * with less bits, then use less bits! This includes integers, and
@@ -42,6 +48,9 @@
  * - Allow the construction of a BigDecimal by passing in strings with decimal values.
  * You can reverse the MathBigDec.toString() algorithm to accomplish this.
  * Currently only passing in integer strings are allowed.
+ * 
+ * - Can a faster toBinary() method be written that uses toString(2)
+ * instead of iterating through every bit in the bigint?
  * 
  * - Finish writing all remaining arithmetic methods of MathBigDec!
  * 
@@ -64,13 +73,13 @@ const TEN = 10n;
 // For example, 3.1 exponent 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
 // it means we'll very quickly lose a lot of accuracy when performing arithmetic!
 // The user expects that, when they pass in 3.1, the resulting BigDecimal should be AS CLOSE to 3.1 as possible!!
-// With a MIN_PRECISION of 50 bits, 3.1 exponent 50 ==> 3.10000000000000142, which is A LOT closer to 3.1!
+// With a DEFAULT_PRECISION of 50 bits, 3.1 exponent 50 ==> 3.10000000000000142, which is A LOT closer to 3.1!
 // I arbitrarily chose 50 bits for the minimum, because that gives us about 15 digits of precision,
 // which is about how much javascript's doubles give us.
 // TODO: If a BigDecimal's EXACT value can be represented with *less* bits, then modify it to use less!
 // For example, integers, or fractions with power-of-2-denominators like 0.5, 0.25, 0.375, etc.
 // can use less bits to represent the exact value.
-const MIN_PRECISION = 50; // Default: 50
+const DEFAULT_PRECISION = 50; // Default: 50
 
 /**
  * The maximum exponent a BigDecimal is allowed to have.
@@ -129,115 +138,180 @@ const getBigintPowerOfTwo = (function() {
     }
 })()
 
+// /**
+//  * DEPRICATED. Old constructor method.
+//  * 
+//  * Creates a BigDecimal that is equal to the provided number and has the specified exponent level.
+//  * If the exponent is not provided, DEFAULT_PRECISION is used, providing about 15 decimal places of precision.
+//  * 
+//  * @param {bigint | string | number} number - The true value of the BigDecimal
+//  * @param {number | undefined} [exponent] - Optional. The desired exponent, or precision for the BigDecimal. 0+, where 0 is integer-level precision. If left undefined, DEFAULT_PRECISION will be used.
+//  * @returns {BigDecimalClass} - The BigDecimal
+//  */
+// function BigDecimal(number, exponent) {
+//     if (typeof number !== 'number' || Number.isInteger(number)) { // An integer was passed in...
+
+//         if (typeof number !== 'bigint') number = BigInt(number)
+//         if (exponent == null) exponent = 0; // Integer precision
+    
+//         number <<= BigInt(exponent);
+
+//         return newBigDecimalFromProperties(number, exponent);
+//     }
+
+//     // A number primitive with decimals was passed in...
+
+//     // Auto-sets the exponent level if not specified
+//     exponent = validateExponent(number, exponent);
+
+//     // Separate the integer and decimal parts of the number
+//     const { integer, decimal } = getIntegerAndDecimalParts_FromNumber(number);
+
+//     // The number has to be bit-shifted according to the desired exponent level
+//     number = BigInt(integer)
+//     number <<= BigInt(exponent);
+
+//     // What is the decimal part bit shifted?...
+
+//     let powerOf2ToUse = powersOfTwoList[exponent];
+
+//     // Is the exponent SO LARGE that bit shifting the Number before casting
+//     // to a BigInt would make it Infinity? Accomodate for this scenario.
+//     let extraToShiftLeft = 0;
+//     if (exponent > MAX_EXPONENT_BEFORE_INFINITY) {
+//         powerOf2ToUse = powersOfTwoList[MAX_EXPONENT_BEFORE_INFINITY];
+//         extraToShiftLeft = exponent - MAX_EXPONENT_BEFORE_INFINITY;
+//     }
+
+//     // Javascript doubles don't have a native bit shift operation
+//     // Because of this, we multiply by powers of 2 to simulate bit shifting!
+//     const shiftedDecimal = decimal * powerOf2ToUse; // Same as decimal * 2**exponent
+    
+//     const roundedDecimal = Math.round(shiftedDecimal)
+//     let decimalPart = BigInt(roundedDecimal);
+
+//     if (extraToShiftLeft > 0) decimalPart <<= BigInt(extraToShiftLeft);
+
+//     // Finally, add the decimal part to the number
+//     number += decimalPart;
+
+//     return newBigDecimalFromProperties(number, exponent);
+// }
+
+// /**
+//  * DEPRICATED. Used by old BigDecimal constructor.
+//  * 
+//  * Use this BigDecimal constructor when you already know the `number` and `exponent` properties of the BigDecimal.
+//  * @param {bigint} number - The `number` property
+//  * @param {number} exponent - The `exponent` property
+//  */
+// function newBigDecimalFromProperties(number, exponent) {
+//     watchExponent(exponent); // Protects the exponent from running away to Infinity.
+//     return { number, exponent }
+// }
+
+// /**
+//  * DEPRICATED. Used by the old BigDecimal constructor.
+//  * 
+//  * Separates the number into its integer and decimal components.
+//  * This can be used during the process of converting it to a BigInt or BigDecimal
+//  * @param {number} number - The number
+//  * @returns {object} An object with 2 properties, `integer` and `decimal`.
+//  */
+// function getIntegerAndDecimalParts_FromNumber(number) {
+//     let integerPart = Math.trunc(number);
+//     let decimalPart = number - integerPart;
+//     return { integer: integerPart, decimal: decimalPart }
+// }
+
 
 
 /**
  * Each BigDecimal contains the properties:
- * - `number` (BigInt)
+ * - `bigint` (BigInt)
  * - `exponent` (Number)
- * 
- * BigDecimals are NOT actually an instance of this class.
- * This class is *only* used for useful JSDoc popups.
+ * - `precision` (Number)
  */
-class BigDecimalClass {
-    /** The exponent-bit-shifted value of the bigint */
-    number;
-    /** The exponent (Number) */
+class BigDecimal {
+
+    bigint;
     exponent;
-}
+    /** The maximum exponent allowed. */
+    precision;
 
-/**
- * Creates a BigDecimal that is equal to the provided number and has the specified exponent level.
- * If the exponent is not provided, MIN_PRECISION is used, providing about 15 decimal places of precision.
- * 
- * TODO: Completely automate the chosen precision. Maybe the minimum number of bits required to
- * round to the specified number, plus an extra 30? Maybe have options for high precision, medium, and low?
- * 
- * TODO: Allow passing in strings with decimals (only integer strings allowed right now).
- * You can completely invserse the MathBigDec.toString() algorithm to do this.
- * 
- * @param {bigint | string | number} number - The true value of the BigDecimal
- * @param {number | undefined} [exponent] - Optional. The desired exponent, or precision for the BigDecimal. 0+, where 0 is integer-level precision. If left undefined, MIN_PRECISION will be used.
- * @returns {BigDecimalClass} - The BigDecimal
- */
-function BigDecimal(number, exponent) {
-    if (typeof number !== 'number' || Number.isInteger(number)) { // An integer was passed in...
+    /**
+     * The BigDecimal constructor. Creates a BigDecimal that is equal to the provided number.
+     * @param {number | bigint | string} number - The desired value.
+     * @param {number} precision - The maximum exponent allowed.
+     * @param {bigint} [bigint] The bigint property, if already known. Either this or `number` must be provided.
+     * @param {number} [exponent] The exponent property, if already known. Must be provided if `bigint` is provided.
+     * 
+     * - `exponent` - The exponent property of the BigDecimal, if it is already known.
+     * Only one of this and `precision` can be provided.
+     * 
+     * - `precision` - The maximum exponent the BigDecimal is allowed to have.
+     * Division operations will be calculated up to this number.
+     */
+    constructor(number, precision = DEFAULT_PRECISION, bigint, exponent) {
+        if (number != null) {
+            if (bigint != null || exponent != null) throw new Error("You must choose between specifying the number, or bigint & exponent parameters.")
+            const type = typeof number;
+            if (type === 'number') {
+                if (!isFinite(number)) throw new Error(`Cannot create a BigDecimal from Infinity!`)
+            } else if (type !== 'bigint' && type !== 'string') throw new Error(`Invalid number type! Can be number, bigint, or string. Received: ${type}`)
 
-        if (typeof number !== 'bigint') number = BigInt(number)
-        if (exponent == null) exponent = 0; // Integer precision
-    
-        number <<= BigInt(exponent);
+            // Cast to string. Also converts OUT of scientific notation, and removes trailing decimal zeros.
+            number = toDecimalString(number);
 
-        return newBigDecimalFromProperties(number, exponent);
+            const dotIndex = number.lastIndexOf('.');
+            const dotIndexFromRight = dotIndex !== -1 ? number.length - dotIndex - 1 : 0; // 0-based from right
+            const decimalDigitCount = dotIndexFromRight;
+
+            // Set the exponent property to the specified precision.
+            // If the number can be represented perfectly will a lower exponent,
+            // this will be modified soon!
+            let exponentProperty = precision;
+
+            // Make the number an integer by multiplying by 10^n where n is the decimal digit count.
+            const powerOfTen = TEN**BigInt(decimalDigitCount);
+            // We can accomplish the same thing by just removing the dot instead.
+            if (dotIndex !== -1) number = number.slice(0, dotIndex) + number.slice(dotIndex + 1)
+
+            number = BigInt(number); // Cast to a bigint now
+
+            number *= getBigintPowerOfTwo(exponentProperty)
+
+            // Now we undo the multiplication by 10^n we did earlier.
+            let bigintProperty = number / powerOfTen
+
+            // If this is zero, we can represent this number perfectly with a lower exponent!
+            const difference = number - (bigintProperty * powerOfTen)
+            if (difference === ZERO) {
+                // The different in number of digits is the number of
+                // bits we need to represent this number exactly!!
+                const newExponent = `${number}`.length - `${bigintProperty}`.length;
+                const exponentDifferent = exponentProperty - newExponent
+                bigintProperty /= getBigintPowerOfTwo(exponentDifferent)
+                exponentProperty = newExponent;
+            }
+
+            this.bigint = bigintProperty;
+            this.exponent = exponentProperty;
+
+        } else if (bigint != null && exponent != null) {
+            if (typeof bigint !== 'bigint') throw new Error(`Bigint property must be of type bigint! Received: ${typeof bigint}`)
+            if (typeof exponent !== 'number') throw new Error(`Exponent property must be of type number! Received: ${typeof exponent}`)
+            if (exponent < 0) throw new Error(`Exponent must not be below 0!`)
+            else if (exponent > MAX_EXPONENT) throw new Error(`Exponent must not exceed ${MAX_EXPONENT}! Received: ${exponent}. If you need more range, please increase the MAX_EXPONENT variable.`)
+            this.bigint = bigint;
+            this.exponent = exponent;
+        } else throw new Error(`You must choose between specifying the number, or bigint & exponent parameters.`)
+
+        if (typeof precision !== 'number') throw new Error(`Precision property must be of type number! Received: ${typeof precision}`)
+        if (typeof precision !== 'number') throw new Error(`Precision property must be of type number! Received: ${typeof precision}`)
+        if (precision < 0 || precision > MAX_EXPONENT) throw new Error(`Precision property must be between 0 and ${MAX_EXPONENT}! Received: ${precision}`)
+        this.precision = precision;
     }
-
-    // A number primitive with decimals was passed in...
-
-    // Auto-sets the exponent level if not specified
-    exponent = validateExponent(number, exponent);
-
-    // Separate the integer and decimal parts of the number
-    const { integer, decimal } = getIntegerAndDecimalParts_FromNumber(number);
-
-    // The number has to be bit-shifted according to the desired exponent level
-    number = BigInt(integer)
-    number <<= BigInt(exponent);
-
-    // What is the decimal part bit shifted?...
-
-    let powerOf2ToUse = powersOfTwoList[exponent];
-
-    // Is the exponent SO LARGE that bit shifting the Number before casting
-    // to a BigInt would make it Infinity? Accomodate for this scenario.
-    let extraToShiftLeft = 0;
-    if (exponent > MAX_EXPONENT_BEFORE_INFINITY) {
-        powerOf2ToUse = powersOfTwoList[MAX_EXPONENT_BEFORE_INFINITY];
-        extraToShiftLeft = exponent - MAX_EXPONENT_BEFORE_INFINITY;
-    }
-
-    // Javascript doubles don't have a native bit shift operation
-    // Because of this, we multiply by powers of 2 to simulate bit shifting!
-    const shiftedDecimal = decimal * powerOf2ToUse; // Same as decimal * 2**exponent
-    
-    const roundedDecimal = Math.round(shiftedDecimal)
-    let decimalPart = BigInt(roundedDecimal);
-
-    if (extraToShiftLeft > 0) decimalPart <<= BigInt(extraToShiftLeft);
-
-    // Finally, add the decimal part to the number
-    number += decimalPart;
-
-    return newBigDecimalFromProperties(number, exponent);
-}
-
-/**
- * Use this BigDecimal constructor when you already know the `number` and `exponent` properties of the BigDecimal.
- * @param {bigint} number - The `number` property
- * @param {number} exponent - The `exponent` property
- */
-function newBigDecimalFromProperties(number, exponent) {
-    watchExponent(exponent); // Protects the exponent from running away to Infinity.
-    return { number, exponent }
-}
-
-/**
- * Called by BigDecimal(). If the provided exponent is not defined, this will return
- * the minimum exponent required to retain as much precision as is in the provided number.
- * @param {number} number - The number
- * @param {number | undefined} exponent - The exponent
- * @returns {number} The validated exponent. 0+
- */
-function validateExponent(number, exponent) {
-    if (exponent != null) {
-        if (exponent < 0) { exponent = 0; console.error('Cannot create a BigDecimal with negative exponent value! Setting to 0.') }
-        return exponent;
-    }
-    // Set the exponent automatically, based on how many
-    // digits to the right of the decimal place it uses.
-    const precisionOfNumber = howMuchPrecisionDoesNumberHave(number);
-    const bitCountForPrecision = howManyBitsForDigitsOfPrecision(precisionOfNumber);
-    if (bitCountForPrecision < MIN_PRECISION) bitCountForPrecision = MIN_PRECISION;
-    return bitCountForPrecision;
 }
 
 /**
@@ -251,31 +325,42 @@ function watchExponent(exponent)  {
 }
 
 /**
- * Separates the number into its integer and decimal components.
- * This can be used during the process of converting it to a BigInt or BigDecimal
- * @param {number} number - The number
- * @returns {object} An object with 2 properties, `integer` and `decimal`.
+ * Converts a number that may be in scientific (e) notation to decimal notation as a string.
+ * Also removes trailing decimal zeros.
+ * @param {number | string} num - The number to convert
+ * @returns {string} The number in decimal format as a string
  */
-function getIntegerAndDecimalParts_FromNumber(number) {
-    let integerPart = Math.trunc(number);
-    let decimalPart = number - integerPart;
-    return { integer: integerPart, decimal: decimalPart }
-}
+function toDecimalString(num) {
+    // Algorithm borrowed from jiggzson: https://gist.github.com/jiggzson/b5f489af9ad931e3d186 
 
-/**
- * Calculates the precision used, or number of digits,
- * to the right of the decimal place of the provided number.
- * @param {number} number - The number
- * @returns {number} The number of digits to the right of the decimal place.
- */
-function howMuchPrecisionDoesNumberHave(number) {
-    const splitParts = `${number}`.split('.')
-    return splitParts[1] ? splitParts[1].length : 0;
+    const nsign = Math.sign(num);
+    num = Math.abs(num); // Remove the sign
+
+    if (/\d+\.?\d*e[\+\-]*\d+/i.test(num)) { // Scientific notation, convert to decimal format...
+        const zero = '0'
+        const [coeff, exponent] = String(num).toLowerCase().split('e');
+        let numZeros = Math.abs(exponent)
+        const sign = exponent / numZeros
+        const coeff_array = coeff.split('.');
+        if (sign === -1) {
+            numZeros = numZeros - coeff_array[0].length;
+            if (numZeros < 0) num = coeff_array[0].slice(0, numZeros) + '.' + coeff_array[0].slice(numZeros) + (coeff_array.length === 2 ? coeff_array[1] : '');
+            else num = zero + '.' + new Array(numZeros + 1).join(zero) + coeff_array.join('');
+        } else { // sign is 0 or 1
+            const dec = coeff_array[1];
+            if (dec) numZeros = numZeros - dec.length;
+            if (numZeros < 0) num = coeff_array[0] + dec.slice(0, numZeros) + '.' + dec.slice(numZeros);
+            else num = coeff_array.join('') + new Array(numZeros + 1).join(zero);
+        }
+    }
+
+    if (nsign < 0) return '-' + num;
+    else return `${num}`;
 }
 
 
 /** Complex BigInt math functions */
-const MathBigInt = {
+const BigIntMath = {
 
     /**
      * Calculate the logarithm base 2 of the specified BigInt. Returns an integer.
@@ -384,7 +469,11 @@ const MathBigInt = {
 }
 
 
-/** Math and arithmetic methods performed on BigDecimals */
+/** 
+ * Math and arithmetic methods performed on BigDecimals 
+ * 
+ * TODO: Move many of these into the BigDecimal class as static methods.
+ * */
 const MathBigDec = {
 
     // Addition...
@@ -400,72 +489,34 @@ const MathBigDec = {
     },
 
     // Multiplication...
-    
-    /**
-     * Multiplies two BigDecimal numbers. The new BigDecimal will have exactly the specified exponent level.
-     * 
-     * I recommend that exponent be atleast 50. This yields approximately
-     * 15 digits of precision which is about how many javascript's doubles have.
-     * However, if you're only multiplying integers, this doesn't matter.
-     * @param {BigDecimalClass} bd1 - Factor1
-     * @param {BigDecimalClass} bd2 - Factor2
-     * @param {string} exponent - The desired exponent value for the product, or number of bits to allocate for the decimal part.
-     * @returns {BigDecimalClass} The product of BigDecimal1 and BigDecimal2.
-     */
-    multiply(bd1, bd2, exponent) {
-        watchExponent(exponent); // Protects the exponent from running away to Infinity.
 
-        const rawProduct = bd1.number * bd2.number;
+    /**
+     * Multiplies two BigDecimal numbers.
+     * @param {BigDecimal} bd1 - Factor1
+     * @param {BigDecimal} bd2 - Factor2
+     * @param {number} [mode] - The mode for determining the new exponent property.
+     * - `0` is the default and will use the maximum exponent of the 2 factors.
+     * - `1` will use the sum of the factors exponents. This yields 100% accuracy (no tuncating), but requires more storage, and more compute for future operations.
+     * - `2` will use the minimum exponent of the 2 factors. This yields the least accuracy, truncating a lot, but it is the fastest!
+     * @returns {BigDecimal} The product of BigDecimal1 and BigDecimal2.
+     */
+    multiply(bd1, bd2, mode = 0) {
+        const exponent = mode === 0     ? Math.max(bd1.exponent, bd2.exponent) // Max
+                       : mode === 1     ? bd1.exponent + bd2.exponent          // Add
+                       : /* mode === 2 */ Math.min(bd1.exponent, bd2.exponent) // Min
+
+        const rawProduct = bd1.bigint * bd2.bigint;
         const newExponent = bd1.exponent + bd2.exponent;
-     
+    
         const exponentDifference = newExponent - exponent;
     
         // Bit shift the rawProduct by the exponent difference to reach the desired exponent level
         const product = rawProduct >> BigInt(exponentDifference);
     
         // Create and return a new BigDecimal object with the adjusted product and the desired exponent
-        return { number: product, exponent }
-    },
-    
-    /**
-     * Multiplies 2 BigDecimals together. The resulting exponent will be the sum of the factors exponents added together.
-     * 
-     * This yeilds 100% accuracy (no truncating), but requires more storage, and more compute for future operations.
-     * @param {BigDecimalClass} bd1 - Factor 1
-     * @param {BigDecimalClass} bd2 - Factor 2
-     * @returns {BigDecimalClass} The product
-     */
-    multiply_add(bd1, bd2) {
-        const exponent = bd1.exponent + bd2.exponent
-        return MathBigDec.multiply(bd1, bd2, exponent)
-    },
-    
-    /**
-     * Multiplies 2 BigDecimals together. The resulting exponent will be the maximum of the factors' exponents.
-     * This is the recommended multiplication method.
-     * 
-     * This doesn't yield 100% accuracy, but rounds, keeping exponent
-     * values from running away to infinity.
-     * @param {BigDecimalClass} bd1 - Factor 1
-     * @param {BigDecimalClass} bd2 - Factor 2
-     * @returns {BigDecimalClass} The product
-     */
-    multiply_max(bd1, bd2) {
-        const exponent = Math.max(bd1.exponent, bd2.exponent)
-        return MathBigDec.multiply(bd1, bd2, exponent)
-    },
-    
-    /**
-     * Multiplies 2 BigDecimals together. The resulting exponent will be the minimum of the factors' exponents.
-     * 
-     * This yields the least accuracy, rounding a lot. But it is the fastest!
-     * @param {BigDecimalClass} bd1 - Factor 1
-     * @param {BigDecimalClass} bd2 - Factor 2
-     * @returns {BigDecimalClass} The product
-     */
-    multiply_min(bd1, bd2) {
-        const exponent = Math.min(bd1.exponent, bd2.exponent)
-        return MathBigDec.multiply(bd1, bd2, exponent)
+        // TODO: Pass in a custom precision property, or maximum exponent!
+        // Should this be the precision of the first bigdecimal parameter passed in?
+        return new BigDecimal(undefined, undefined, product, exponent)
     },
 
     // Division...
@@ -542,7 +593,7 @@ const MathBigDec = {
      * @returns {BigDecimalClass} The negated BigDecimal
      */
     negate(bd) {
-        bd.number *= NEGONE;
+        bd.bigint *= NEGONE;
     },
 
     // Castings...
@@ -557,7 +608,7 @@ const MathBigDec = {
         const exponent_bigint = BigInt(bd.exponent);
     
         // Bit shift to the right to get the integer part. This truncates any decimal information.
-        let integerPart = bd.number >> exponent_bigint;
+        let integerPart = bd.bigint >> exponent_bigint;
     
         if (!round || bd.exponent === 0) return integerPart;
     
@@ -565,7 +616,7 @@ const MathBigDec = {
         // To round in binary is easy. If the first digit (or most-significant digit)
         // of the decimal portion is a 1, we round up! If it's 0, we round down.
 
-        const bitAtPosition = MathBigInt.getBitAtPositionFromRight(bd.number, bd.exponent)
+        const bitAtPosition = BigIntMath.getBitAtPositionFromRight(bd.bigint, bd.exponent)
         // If the result is greater than zero, we know the bit is a 1! Round up.
         if (bitAtPosition === 1) integerPart++;
         return integerPart;
@@ -581,14 +632,14 @@ const MathBigDec = {
         const exponent_bigint = BigInt(bd.exponent);
     
         // Extract the BigInt portion out of the BigDecimal
-        const integerPart = bd.number >> exponent_bigint;
+        const integerPart = bd.bigint >> exponent_bigint;
     
         let number = Number(integerPart);
     
         // Fetch only the bits containing the decimal part of the number
-        let decimalPartShifted = bd.number - (integerPart << exponent_bigint);
+        let decimalPartShifted = bd.bigint - (integerPart << exponent_bigint);
         // Alternative line, around 10-20% slower:
-        // const decimalPartShifted = MathBigInt.getLeastSignificantBits(bigdecimal.number, exponent_bigint)
+        // const decimalPartShifted = MathBigInt.getLeastSignificantBits(bd.bigint, exponent_bigint)
     
         // Convert to a number
     
@@ -627,37 +678,37 @@ const MathBigDec = {
      * 9 digits of decimal precision, but in all effectiveness it only has 3 digits of precision,
      * because a single increment to 2/1024 now yields 0.001953125, which changed **every single** digit!
      * The effective decimal digits can be calculated using MathBigDec.getEffectiveDecimalPlaces().
-     * @param {BigDecimalClass} bigdecimal - The BigDecimal
+     * @param {BigDecimalClass} bd - The BigDecimal
      * @returns {string} The string with the exact value
      */
-    toString(bigdecimal) {
-        if (bigdecimal.number === ZERO) return '0';
-        const isNegative = bigdecimal.number < ZERO;
+    toString(bd) {
+        if (bd.bigint === ZERO) return '0';
+        const isNegative = bd.bigint < ZERO;
     
-        const powerOfTenToMultiply = TEN**BigInt(bigdecimal.exponent);
+        const powerOfTenToMultiply = TEN**BigInt(bd.exponent);
     
         // This makes the number LARGE enough so that when we divide by a
         // power of 2, there won't be any division overflow.
-        const largenedNumber = bigdecimal.number * powerOfTenToMultiply
+        const largenedNumber = bd.bigint * powerOfTenToMultiply
     
-        const dividedNumber = largenedNumber / getBigintPowerOfTwo(bigdecimal.exponent);
+        const dividedNumber = largenedNumber / getBigintPowerOfTwo(bd.exponent);
         let string = `${dividedNumber}`
     
-        if (bigdecimal.exponent === 0) return string; // Integer
+        if (bd.exponent === 0) return string; // Integer
     
         // Modify the string because it has a decimal value...
     
         // Make sure leading zeros aren't left out of the beginning
-        const integerPortion = bigdecimal.number >> BigInt(bigdecimal.exponent);
+        const integerPortion = bd.bigint >> BigInt(bd.exponent);
         if (integerPortion === ZERO || integerPortion === NEGONE) {
-            let missingZeros = bigdecimal.exponent - string.length;
+            let missingZeros = bd.exponent - string.length;
             if (isNegative) missingZeros++;
             if (missingZeros > 0) string = isNegative ? '-' + '0'.repeat(missingZeros) + string.slice(1)
                                                       : '0'.repeat(missingZeros) + string;
         }
     
         // Insert the decimal point at position 'exponent' from the right side
-        string = insertDotAtIndexFromRight(string, bigdecimal.exponent);
+        string = insertDotAtIndexFromRight(string, bd.exponent);
         string = trimTrailingZeros(string);
     
         // If the integer portion is 0, apphend that to the start! For example, '.75' => '0.75'
@@ -680,7 +731,7 @@ const MathBigDec = {
             const rightPart = string.slice(string.length - index);
             return leftPart + '.' + rightPart
         }
-
+        
         /** Trims any '0's off the end of the provided string. */
         function trimTrailingZeros(string) {
             let i = string.length - 1;
@@ -701,24 +752,24 @@ const MathBigDec = {
      * @returns {string} The binary string. If it is negative, the leading `1` sign will have a space after it for readability.
      */
     toBinary(bd) {
-        if (bd.number === ZERO) return '0';
-        const isNegative = bd.number < ZERO;
+        if (bd.bigint === ZERO) return '0';
+        const isNegative = bd.bigint < ZERO;
     
         let binaryString = '';
     
         // This equation to calculate a bigint's bit-count, b = log_2(N) + 1, is snagged from:
         // https://math.stackexchange.com/questions/1416606/how-to-find-the-amount-of-binary-digits-in-a-decimal-number/1416817#1416817
-        const bitCount = isNegative ? MathBigInt.log2(MathBigInt.abs(bd.number)) + TWO // Plus 2 to account for the sign bit
-                     /* positive */ : MathBigInt.log2(           bd.number ) + ONE
+        const bitCount = isNegative ? BigIntMath.log2(BigIntMath.abs(bd.bigint)) + TWO // Plus 2 to account for the sign bit
+                     /* positive */ : BigIntMath.log2(           bd.bigint ) + ONE
         // Alternate method to calculate the bit count that first converts the number to two's complement notation:
-        // const bitCount = bigdecimal.number.toString(2).length;
+        // const bitCount = bd.bigint.toString(2).length;
     
         // If the bit length is 5, the resulting mask would be '10000'
         let mask = ONE << (bitCount - ONE);
     
         while (mask !== ZERO) {
             // Apphend the bit at the mask position to the string...
-            if ((bd.number & mask) === ZERO) binaryString += '0';
+            if ((bd.bigint & mask) === ZERO) binaryString += '0';
             else binaryString += '1';
             mask >>= ONE;
         }
@@ -751,11 +802,11 @@ const MathBigDec = {
         if (round && difference > 0) { // Only round if we're shifting right.
             // What is the bit's positition we need to round up if it's a '1'?
             const bitPosition = difference;
-            roundUp = MathBigInt.getBitAtPositionFromRight(bd.number, bitPosition) === 1
+            roundUp = BigIntMath.getBitAtPositionFromRight(bd.bigint, bitPosition) === 1
         }
         
-        bd.number >>= BigInt(difference);
-        if (roundUp) bd.number++;
+        bd.bigint >>= BigInt(difference);
+        if (roundUp) bd.bigint++;
         bd.exponent = exponent;
     },
 
@@ -884,7 +935,7 @@ const MathBigDec = {
             return Math.floor(precision);
         } else {
             const powerOfTwo = getBigintPowerOfTwo(bd.exponent)
-            return MathBigInt.log10(powerOfTwo);
+            return BigIntMath.log10(powerOfTwo);
         }
     },
 
@@ -912,7 +963,7 @@ const MathBigDec = {
         // contains a - sign at the beginning for negatives,
         // subsequently in the computer, a '1' bit is used for the sign.
         // This means the bit length is still the same!
-        return bd.number.toString(2).length;
+        return bd.bigint.toString(2).length;
     }
 };
 
@@ -927,11 +978,10 @@ const MathBigDec = {
 ////////////////////////////////////////////////////////////////////
 
 
-
-const bd1 = BigDecimal(5.25, 2);
+const n1 = '1.11223344';
+const bd1 = new BigDecimal(n1); // 125 => 0625
+console.log(`${n1} converted into a BigDecimal:`)
 MathBigDec.printInfo(bd1)
-const bd2 = BigDecimal(3.36, 7);
-MathBigDec.printInfo(bd2)
 
 
 // (function speedTest_Miscellanious() {
@@ -974,13 +1024,13 @@ const BigNumber = require('bignumber.js'); // BigNumber library
 //     console.log(`\nMultiplying factors ${factor1} and ${factor2} together...`)
 //     console.log(`Expected results: ${factor1 * factor2}\n`)
     
-//     const loopCount = 10**7;
+//     const loopCount = 10**6;
 //     let product;
     
 //     // This BigDecimal library
 //     console.time('BigDecimal')
 //     for (let i = 0; i < loopCount; i++) {
-//         product = MathBigDec.multiply_max(f1, f2);
+//         product = MathBigDec.multiply(f1, f2);
 //     }
 //     console.timeEnd('BigDecimal')
 //     console.log(`BigDecimal product: ${MathBigDec.toString(product)}`)
