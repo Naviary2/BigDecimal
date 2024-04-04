@@ -245,12 +245,6 @@ class BigDecimal {
      * @param {number} precision - The maximum exponent allowed.
      * @param {bigint} [bigint] The bigint property, if already known. Either this or `number` must be provided.
      * @param {number} [exponent] The exponent property, if already known. Must be provided if `bigint` is provided.
-     * 
-     * - `exponent` - The exponent property of the BigDecimal, if it is already known.
-     * Only one of this and `precision` can be provided.
-     * 
-     * - `precision` - The maximum exponent the BigDecimal is allowed to have.
-     * Division operations will be calculated up to this number.
      */
     constructor(number, precision = DEFAULT_PRECISION, bigint, exponent) {
         if (number != null) {
