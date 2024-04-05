@@ -1,6 +1,6 @@
 
 /**
- * bigdecimal.js v0.1.2 Beta
+ * bigdecimal.js v0.2.0 Beta
  * High performance arbitrary-precision decimal type of Javascript.
  * https://github.com/Naviary2/BigDecimal
  * Copyright (c) 2024 Naviary (www.InfiniteChess.org) <infinitechess.org@gmail.com>
@@ -29,7 +29,7 @@
 /**
  * TODO:
  * 
- * - Move most of the MathBigDec functions into the BigDecimal class as static methods.
+ * - Move most of the MathBigDec functions into the BigDecimal class.
  * After this we could, for example, do mybigdecimal.multiply(bigdecfactor2)
  * to modify the bigdecimal we called .multiply() on.
  * 
@@ -42,6 +42,9 @@
  * 
  * - Can a faster toBinary() method be written that uses toString(2)
  * instead of iterating through every bit in the bigint?
+ * 
+ * - toNumber() could be re-written to handle both the integer and decimal
+ * parts together instead of separate.
  * 
  * - Finish writing all remaining arithmetic methods of MathBigDec!
  * 
@@ -67,9 +70,6 @@ const TEN = 10n;
 // With a DEFAULT_PRECISION of 50 bits, 3.1 exponent 50 ==> 3.10000000000000142, which is A LOT closer to 3.1!
 // I arbitrarily chose 50 bits for the minimum, because that gives us about 15 digits of precision,
 // which is about how much javascript's doubles give us.
-// TODO: If a BigDecimal's EXACT value can be represented with *less* bits, then modify it to use less!
-// For example, integers, or fractions with power-of-2-denominators like 0.5, 0.25, 0.375, etc.
-// can use less bits to represent the exact value.
 const DEFAULT_PRECISION = 50; // Default: 50
 
 /**
@@ -456,7 +456,7 @@ const BigIntMath = {
 /** 
  * Math and arithmetic methods performed on BigDecimals 
  * 
- * TODO: Move many of these into the BigDecimal class as static methods.
+ * TODO: Move many of these into the BigDecimal class.
  * */
 const MathBigDec = {
 
@@ -480,7 +480,7 @@ const MathBigDec = {
      * @param {BigDecimal} bd2 - Factor2
      * @param {number} [mode] - The mode for determining the new exponent property.
      * - `0` is the default and will use the maximum exponent of the 2 factors.
-     * - `1` will use the sum of the factors exponents. This yields 100% accuracy (no tuncating), but requires more storage, and more compute for future operations.
+     * - `1` will use the sum of the factors exponents. This yields 100% accuracy (no truncating), but requires more storage, and more compute for future operations.
      * - `2` will use the minimum exponent of the 2 factors. This yields the least accuracy, truncating a lot, but it is the fastest!
      * @returns {BigDecimal} The product of BigDecimal1 and BigDecimal2.
      */
@@ -726,7 +726,7 @@ const MathBigDec = {
     },
 
     /**
-     * Returns the BigDecimal's `number` property in binary form, **exactly** like how computers store them,
+     * Returns the BigDecimal's `bigint` property in binary form, **exactly** like how computers store them,
      * in two's complement notation. Negative values have all their bits flipped, and then added 1.
      * To multiply by -1, reverse all the bits, and add 1. This works both ways.
      * 
@@ -743,7 +743,7 @@ const MathBigDec = {
         // This equation to calculate a bigint's bit-count, b = log_2(N) + 1, is snagged from:
         // https://math.stackexchange.com/questions/1416606/how-to-find-the-amount-of-binary-digits-in-a-decimal-number/1416817#1416817
         const bitCount = isNegative ? BigIntMath.log2(BigIntMath.abs(bd.bigint)) + TWO // Plus 2 to account for the sign bit
-                     /* positive */ : BigIntMath.log2(           bd.bigint ) + ONE
+                     /* positive */ : BigIntMath.log2(               bd.bigint ) + ONE
         // Alternate method to calculate the bit count that first converts the number to two's complement notation:
         // const bitCount = bd.bigint.toString(2).length;
     
@@ -770,8 +770,8 @@ const MathBigDec = {
     // Rounding & Truncating...
 
     /**
-     * Truncates a given BigDecimal to the desired exponent level.
-     * If the provided exponent is higher than the existing exponent, no truncating will occur.
+     * Rounds a given BigDecimal to the desired exponent level.
+     * If round is false, this truncates instead. But if the provided exponent is higher than the existing exponent, no truncating will occur.
      * @param {BigDecimal} bd - The BigDecimal
      * @param {number} exponent - The desired exponent
      * @param {boolean} round - Whether or not to round instead of truncating.
@@ -838,10 +838,10 @@ const MathBigDec = {
     /**
      * TO BE WRITTEN...
      * 
-     * Detects of the provided BigDecimals are equal.
+     * Detects if the provided BigDecimals are equal.
      * To do this, it first tries to convert them into the same exponent level,
      * because BigDecimals of different exponent levels may still be equal,
-     * so it's not enough to compare their `number` properties.
+     * so it's not enough to compare their `bigint` properties.
      * @param {BigDecimal} bd1 - BigDecimal1
      * @param {BigDecimal} bd2 - BigDecimal2
      * @returns {boolean} *true* if they are equal
@@ -937,7 +937,7 @@ const MathBigDec = {
     },
 
     /**
-     * Calculates the number of bits used to store the `number` property of the BigDecimal.
+     * Calculates the number of bits used to store the `bigint` property of the BigDecimal.
      * @param {BigDecimal} bd - The BigDecimal
      * @returns {number} The number of bits
      */
@@ -962,7 +962,7 @@ const MathBigDec = {
 
 
 const n1 = '1.11223344';
-const bd1 = new BigDecimal(n1); // 125 => 0625
+const bd1 = new BigDecimal(n1);
 console.log(`${n1} converted into a BigDecimal:`)
 MathBigDec.printInfo(bd1)
 

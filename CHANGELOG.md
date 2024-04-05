@@ -1,4 +1,4 @@
-#### 0.1.2
+#### 0.2.0
 * 04/04/2024
 * Changed the constructor to a class.
 * Added a max precision option. If a number can be represented exactly will a smaller exponent, it will do so, but it will not exceed precision.
