@@ -28,10 +28,12 @@
 
 /**
  * TODO:
- * 
- * - Move most of the MathBigDec functions into the BigDecimal class.
- * After this we could, for example, do mybigdecimal.multiply(bigdecfactor2)
- * to modify the bigdecimal we called .multiply() on.
+ *
+ * - If the priority is speed, then I should probably revert back to storing the 
+ * BigDecimals as objects, instead of classes, because using the class 
+ * constructor is about 20% slower.
+ * I will just have to accept calling BigDecMath.multiply() and other operations
+ * for performing arithmetic on BigDecimals.
  * 
  * - Decide how we want to handle the precision when you pass in a string for the BigDecimal.
  * For example, if 1.111222333444555666777888999 is passed in, should the precision be a set
