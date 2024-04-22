@@ -28,6 +28,9 @@
 
 /**
  * TODO:
+ * 
+ * - Javascript numbers DO have a bitshift operation (not sure what lead me to believe they don't),
+ * so use that intead of multiplying by powers of 2.
  *
  * - If the priority is speed, then I should probably revert back to storing the 
  * BigDecimals as objects, instead of classes, because using the class 
