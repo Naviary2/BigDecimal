@@ -28,6 +28,8 @@
 
 /**
  * TODO:
+ *
+ * - Change name of `exponent` property to `divex`.
  * 
  * - Javascript numbers DO have a bitshift operation (not sure what lead me to believe they don't),
  * so use that intead of multiplying by powers of 2.
