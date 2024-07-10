@@ -28,8 +28,6 @@
 
 /**
  * TODO:
- *
- * - Change name of `exponent` property to `divex`.
  * 
  * - Javascript numbers DO have a bitshift operation (not sure what lead me to believe they don't),
  * so use that intead of multiplying by powers of 2.
@@ -71,19 +69,19 @@ const TEN = 10n;
 
 // The minimum number of bits used to store decimal bits in BigDecimals.
 // Without a minimum precision, small numbers parsed into BigDecimals would lose some precision.
-// For example, 3.1 exponent 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
+// For example, 3.1 divex 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
 // it means we'll very quickly lose a lot of accuracy when performing arithmetic!
 // The user expects that, when they pass in 3.1, the resulting BigDecimal should be AS CLOSE to 3.1 as possible!!
-// With a DEFAULT_PRECISION of 50 bits, 3.1 exponent 50 ==> 3.10000000000000142, which is A LOT closer to 3.1!
+// With a DEFAULT_PRECISION of 50 bits, 3.1 divex 50 ==> 3.10000000000000142, which is A LOT closer to 3.1!
 // I arbitrarily chose 50 bits for the minimum, because that gives us about 15 digits of precision,
 // which is about how much javascript's doubles give us.
 const DEFAULT_PRECISION = 50; // Default: 50
 
 /**
- * The maximum exponent a BigDecimal is allowed to have.
- * Beyond this, the exponent is assumed to be running away towards Infinity, so an error is thrown.
+ * The maximum divex a BigDecimal is allowed to have.
+ * Beyond this, the divex is assumed to be running away towards Infinity, so an error is thrown.
  */
-const MAX_EXPONENT = 1e5; // Default: 1e5 (100,000)
+const MAX_DIVEX = 1e5; // Default: 1e5 (100,000)
 
 /** A list of powers of 2, 1024 in length, starting at 1 and stopping before Number.MAX_VALUE. This goes up to 2^1023. */
 const powersOfTwoList = (() => {
@@ -96,10 +94,10 @@ const powersOfTwoList = (() => {
     return powersOfTwo;
 })();
 
-// Any exponent greater than 1023 can lead to Number casts greater
+// Any divex greater than 1023 can lead to Number casts greater
 // than MAX_VALUE or equal to Infinity, because 2^1024 === Infinity.
-// BigDecimals with exponents THAT big need special care!
-const MAX_EXPONENT_BEFORE_INFINITY = powersOfTwoList.length - 1; // 1023
+// BigDecimals with divexs THAT big need special care!
+const MAX_DIVEX_BEFORE_INFINITY = powersOfTwoList.length - 1; // 1023
 
 /**
  * Returns the specified bigint power of 2 when called.
@@ -139,51 +137,51 @@ const getBigintPowerOfTwo = (function() {
 // /**
 //  * DEPRICATED. Old constructor method.
 //  * 
-//  * Creates a BigDecimal that is equal to the provided number and has the specified exponent level.
-//  * If the exponent is not provided, DEFAULT_PRECISION is used, providing about 15 decimal places of precision.
+//  * Creates a BigDecimal that is equal to the provided number and has the specified divex level.
+//  * If the divex is not provided, DEFAULT_PRECISION is used, providing about 15 decimal places of precision.
 //  * 
 //  * @param {bigint | string | number} number - The true value of the BigDecimal
-//  * @param {number | undefined} [exponent] - Optional. The desired exponent, or precision for the BigDecimal. 0+, where 0 is integer-level precision. If left undefined, DEFAULT_PRECISION will be used.
+//  * @param {number | undefined} [divex] - Optional. The desired divex, or precision for the BigDecimal. 0+, where 0 is integer-level precision. If left undefined, DEFAULT_PRECISION will be used.
 //  * @returns {BigDecimal} - The BigDecimal
 //  */
-// function BigDecimal(number, exponent) {
+// function BigDecimal(number, divex) {
 //     if (typeof number !== 'number' || Number.isInteger(number)) { // An integer was passed in...
 
 //         if (typeof number !== 'bigint') number = BigInt(number)
-//         if (exponent == null) exponent = 0; // Integer precision
+//         if (divex == null) divex = 0; // Integer precision
     
-//         number <<= BigInt(exponent);
+//         number <<= BigInt(divex);
 
-//         return newBigDecimalFromProperties(number, exponent);
+//         return newBigDecimalFromProperties(number, divex);
 //     }
 
 //     // A number primitive with decimals was passed in...
 
-//     // Auto-sets the exponent level if not specified
-//     exponent = validateExponent(number, exponent);
+//     // Auto-sets the divex level if not specified
+//     divex = validateExponent(number, divex);
 
 //     // Separate the integer and decimal parts of the number
 //     const { integer, decimal } = getIntegerAndDecimalParts_FromNumber(number);
 
-//     // The number has to be bit-shifted according to the desired exponent level
+//     // The number has to be bit-shifted according to the desired divex level
 //     number = BigInt(integer)
-//     number <<= BigInt(exponent);
+//     number <<= BigInt(divex);
 
 //     // What is the decimal part bit shifted?...
 
-//     let powerOf2ToUse = powersOfTwoList[exponent];
+//     let powerOf2ToUse = powersOfTwoList[divex];
 
-//     // Is the exponent SO LARGE that bit shifting the Number before casting
+//     // Is the divex SO LARGE that bit shifting the Number before casting
 //     // to a BigInt would make it Infinity? Accomodate for this scenario.
 //     let extraToShiftLeft = 0;
-//     if (exponent > MAX_EXPONENT_BEFORE_INFINITY) {
-//         powerOf2ToUse = powersOfTwoList[MAX_EXPONENT_BEFORE_INFINITY];
-//         extraToShiftLeft = exponent - MAX_EXPONENT_BEFORE_INFINITY;
+//     if (divex > MAX_DIVEX_BEFORE_INFINITY) {
+//         powerOf2ToUse = powersOfTwoList[MAX_DIVEX_BEFORE_INFINITY];
+//         extraToShiftLeft = divex - MAX_DIVEX_BEFORE_INFINITY;
 //     }
 
 //     // Javascript doubles don't have a native bit shift operation
 //     // Because of this, we multiply by powers of 2 to simulate bit shifting!
-//     const shiftedDecimal = decimal * powerOf2ToUse; // Same as decimal * 2**exponent
+//     const shiftedDecimal = decimal * powerOf2ToUse; // Same as decimal * 2**divex
     
 //     const roundedDecimal = Math.round(shiftedDecimal)
 //     let decimalPart = BigInt(roundedDecimal);
@@ -193,19 +191,19 @@ const getBigintPowerOfTwo = (function() {
 //     // Finally, add the decimal part to the number
 //     number += decimalPart;
 
-//     return newBigDecimalFromProperties(number, exponent);
+//     return newBigDecimalFromProperties(number, divex);
 // }
 
 // /**
 //  * DEPRICATED. Used by old BigDecimal constructor.
 //  * 
-//  * Use this BigDecimal constructor when you already know the `number` and `exponent` properties of the BigDecimal.
+//  * Use this BigDecimal constructor when you already know the `number` and `divex` properties of the BigDecimal.
 //  * @param {bigint} number - The `number` property
-//  * @param {number} exponent - The `exponent` property
+//  * @param {number} divex - The `divex` property
 //  */
-// function newBigDecimalFromProperties(number, exponent) {
-//     watchExponent(exponent); // Protects the exponent from running away to Infinity.
-//     return { number, exponent }
+// function newBigDecimalFromProperties(number, divex) {
+//     watchExponent(divex); // Protects the divex from running away to Infinity.
+//     return { number, divex }
 // }
 
 // /**
@@ -227,26 +225,26 @@ const getBigintPowerOfTwo = (function() {
 /**
  * Each BigDecimal contains the properties:
  * - `bigint` (BigInt)
- * - `exponent` (Number)
+ * - `divex` (Number)
  * - `precision` (Number)
  */
 class BigDecimal {
 
     bigint;
-    exponent;
-    /** The maximum exponent allowed. */
+    divex;
+    /** The maximum divex allowed. */
     precision;
 
     /**
      * The BigDecimal constructor. Creates a BigDecimal that is equal to the provided number.
      * @param {number | bigint | string} number - The desired value.
-     * @param {number} precision - The maximum exponent allowed.
+     * @param {number} precision - The maximum divex allowed.
      * @param {bigint} [bigint] The bigint property, if already known. Either this or `number` must be provided.
-     * @param {number} [exponent] The exponent property, if already known. Must be provided if `bigint` is provided.
+     * @param {number} [divex] The divex property, if already known. Must be provided if `bigint` is provided.
      */
-    constructor(number, precision = DEFAULT_PRECISION, bigint, exponent) {
+    constructor(number, precision = DEFAULT_PRECISION, bigint, divex) {
         if (number != null) {
-            if (bigint != null || exponent != null) throw new Error("You must choose between specifying the number, or bigint & exponent parameters.")
+            if (bigint != null || divex != null) throw new Error("You must choose between specifying the number, or bigint & divex parameters.")
             const type = typeof number;
             if (type === 'number') {
                 if (!isFinite(number)) throw new Error(`Cannot create a BigDecimal from Infinity!`)
@@ -259,10 +257,10 @@ class BigDecimal {
             const dotIndexFromRight = dotIndex !== -1 ? number.length - dotIndex - 1 : 0; // 0-based from right
             const decimalDigitCount = dotIndexFromRight;
 
-            // Set the exponent property to the specified precision.
-            // If the number can be represented perfectly will a lower exponent,
+            // Set the divex property to the specified precision.
+            // If the number can be represented perfectly will a lower divex,
             // this will be modified soon!
-            let exponentProperty = precision;
+            let divexProperty = precision;
 
             // Make the number an integer by multiplying by 10^n where n is the decimal digit count.
             const powerOfTen = TEN**BigInt(decimalDigitCount);
@@ -271,48 +269,48 @@ class BigDecimal {
 
             number = BigInt(number); // Cast to a bigint now
 
-            number *= getBigintPowerOfTwo(exponentProperty)
+            number *= getBigintPowerOfTwo(divexProperty)
 
             // Now we undo the multiplication by 10^n we did earlier.
             let bigintProperty = number / powerOfTen
 
-            // If this is zero, we can represent this number perfectly with a lower exponent!
+            // If this is zero, we can represent this number perfectly with a lower divex!
             const difference = number - (bigintProperty * powerOfTen)
             if (difference === ZERO) {
                 // The different in number of digits is the number of
                 // bits we need to represent this number exactly!!
                 const newExponent = `${number}`.length - `${bigintProperty}`.length;
-                const exponentDifferent = exponentProperty - newExponent
-                bigintProperty /= getBigintPowerOfTwo(exponentDifferent)
-                exponentProperty = newExponent;
+                const divexDifferent = divexProperty - newExponent
+                bigintProperty /= getBigintPowerOfTwo(divexDifferent)
+                divexProperty = newExponent;
             }
 
             this.bigint = bigintProperty;
-            this.exponent = exponentProperty;
+            this.divex = divexProperty;
 
-        } else if (bigint != null && exponent != null) {
+        } else if (bigint != null && divex != null) {
             if (typeof bigint !== 'bigint') throw new Error(`Bigint property must be of type bigint! Received: ${typeof bigint}`)
-            if (typeof exponent !== 'number') throw new Error(`Exponent property must be of type number! Received: ${typeof exponent}`)
-            if (exponent < 0) throw new Error(`Exponent must not be below 0!`)
-            else if (exponent > MAX_EXPONENT) throw new Error(`Exponent must not exceed ${MAX_EXPONENT}! Received: ${exponent}. If you need more range, please increase the MAX_EXPONENT variable.`)
+            if (typeof divex !== 'number') throw new Error(`Exponent property must be of type number! Received: ${typeof divex}`)
+            if (divex < 0) throw new Error(`Exponent must not be below 0!`)
+            else if (divex > MAX_DIVEX) throw new Error(`Exponent must not exceed ${MAX_DIVEX}! Received: ${divex}. If you need more range, please increase the MAX_DIVEX variable.`)
             this.bigint = bigint;
-            this.exponent = exponent;
-        } else throw new Error(`You must choose between specifying the number, or bigint & exponent parameters.`)
+            this.divex = divex;
+        } else throw new Error(`You must choose between specifying the number, or bigint & divex parameters.`)
 
         if (typeof precision !== 'number') throw new Error(`Precision property must be of type number! Received: ${typeof precision}`)
-        if (precision < 0 || precision > MAX_EXPONENT) throw new Error(`Precision property must be between 0 and ${MAX_EXPONENT}! Received: ${precision}`)
+        if (precision < 0 || precision > MAX_DIVEX) throw new Error(`Precision property must be between 0 and ${MAX_DIVEX}! Received: ${precision}`)
         this.precision = precision;
     }
 }
 
 /**
- * Throws an error if the provided exponent is beyond `MAX_EXPONENT`.
+ * Throws an error if the provided divex is beyond `MAX_DIVEX`.
  * It is assumed it's running away to Infinity.
- * @param {number} exponent - The `exponent` property of the BigDecimal
+ * @param {number} divex - The `divex` property of the BigDecimal
  */
-function watchExponent(exponent)  {
-    if (exponent > MAX_EXPONENT)
-        throw new Error(`Cannot create a BigDecimal with exponent ${exponent}! Out of range. Max allowed: ${MAX_EXPONENT}. If you need more range, please increase the MAX_EXPONENT variable.`)
+function watchExponent(divex)  {
+    if (divex > MAX_DIVEX)
+        throw new Error(`Cannot create a BigDecimal with divex ${divex}! Out of range. Max allowed: ${MAX_DIVEX}. If you need more range, please increase the MAX_DIVEX variable.`)
 }
 
 /**
@@ -329,9 +327,9 @@ function toDecimalString(num) {
 
     if (/\d+\.?\d*e[\+\-]*\d+/i.test(num)) { // Scientific notation, convert to decimal format...
         const zero = '0'
-        const [coeff, exponent] = String(num).toLowerCase().split('e');
-        let numZeros = Math.abs(exponent)
-        const sign = exponent / numZeros
+        const [coeff, divex] = String(num).toLowerCase().split('e');
+        let numZeros = Math.abs(divex)
+        const sign = divex / numZeros
         const coeff_array = coeff.split('.');
         if (sign === -1) {
             numZeros = numZeros - coeff_array[0].length;
@@ -422,7 +420,7 @@ const BigIntMath = {
 
     /**
      * Returns the specified number of least significant.
-     * This can be used to extract only the decimal portion of a BigDecimal by passing in the exponent number for the count.
+     * This can be used to extract only the decimal portion of a BigDecimal by passing in the divex number for the count.
      * @param {bigint} bigint - The BigInt
      * @param {bigint} count - The number of bits to get
      * @returns {bigint} A BigInt containing only the specified bits
@@ -485,29 +483,29 @@ const MathBigDec = {
      * Multiplies two BigDecimal numbers.
      * @param {BigDecimal} bd1 - Factor1
      * @param {BigDecimal} bd2 - Factor2
-     * @param {number} [mode] - The mode for determining the new exponent property.
-     * - `0` is the default and will use the maximum exponent of the 2 factors.
-     * - `1` will use the sum of the factors exponents. This yields 100% accuracy (no truncating), but requires more storage, and more compute for future operations.
-     * - `2` will use the minimum exponent of the 2 factors. This yields the least accuracy, truncating a lot, but it is the fastest!
+     * @param {number} [mode] - The mode for determining the new divex property.
+     * - `0` is the default and will use the maximum divex of the 2 factors.
+     * - `1` will use the sum of the factors divexs. This yields 100% accuracy (no truncating), but requires more storage, and more compute for future operations.
+     * - `2` will use the minimum divex of the 2 factors. This yields the least accuracy, truncating a lot, but it is the fastest!
      * @returns {BigDecimal} The product of BigDecimal1 and BigDecimal2.
      */
     multiply(bd1, bd2, mode = 0) {
-        const exponent = mode === 0     ? Math.max(bd1.exponent, bd2.exponent) // Max
-                       : mode === 1     ? bd1.exponent + bd2.exponent          // Add
-                       : /* mode === 2 */ Math.min(bd1.exponent, bd2.exponent) // Min
+        const divex = mode === 0     ? Math.max(bd1.divex, bd2.divex) // Max
+                       : mode === 1     ? bd1.divex + bd2.divex          // Add
+                       : /* mode === 2 */ Math.min(bd1.divex, bd2.divex) // Min
 
         const rawProduct = bd1.bigint * bd2.bigint;
-        const newExponent = bd1.exponent + bd2.exponent;
+        const newExponent = bd1.divex + bd2.divex;
     
-        const exponentDifference = newExponent - exponent;
+        const divexDifference = newExponent - divex;
     
-        // Bit shift the rawProduct by the exponent difference to reach the desired exponent level
-        const product = rawProduct >> BigInt(exponentDifference);
+        // Bit shift the rawProduct by the divex difference to reach the desired divex level
+        const product = rawProduct >> BigInt(divexDifference);
     
-        // Create and return a new BigDecimal object with the adjusted product and the desired exponent
-        // TODO: Pass in a custom precision property, or maximum exponent!
+        // Create and return a new BigDecimal object with the adjusted product and the desired divex
+        // TODO: Pass in a custom precision property, or maximum divex!
         // Should this be the precision of the first bigdecimal parameter passed in?
-        return new BigDecimal(undefined, undefined, product, exponent)
+        return new BigDecimal(undefined, undefined, product, divex)
     },
 
     // Division...
@@ -596,18 +594,18 @@ const MathBigDec = {
      * @returns {bigint} The BigInt
      */
     toBigInt(bd, round = true) {
-        const exponent_bigint = BigInt(bd.exponent);
+        const divex_bigint = BigInt(bd.divex);
     
         // Bit shift to the right to get the integer part. This truncates any decimal information.
-        let integerPart = bd.bigint >> exponent_bigint;
+        let integerPart = bd.bigint >> divex_bigint;
     
-        if (!round || bd.exponent === 0) return integerPart;
+        if (!round || bd.divex === 0) return integerPart;
     
         // We are rounding the decimal digits!
         // To round in binary is easy. If the first digit (or most-significant digit)
         // of the decimal portion is a 1, we round up! If it's 0, we round down.
 
-        const bitAtPosition = BigIntMath.getBitAtPositionFromRight(bd.bigint, bd.exponent)
+        const bitAtPosition = BigIntMath.getBitAtPositionFromRight(bd.bigint, bd.divex)
         if (bitAtPosition === 1) integerPart++;
         return integerPart;
     },
@@ -619,34 +617,34 @@ const MathBigDec = {
      * @returns {number} The number as a normal javascript double
      */
     toNumber(bd) {
-        const exponent_bigint = BigInt(bd.exponent);
+        const divex_bigint = BigInt(bd.divex);
     
         // Extract the BigInt portion out of the BigDecimal
-        const integerPart = bd.bigint >> exponent_bigint;
+        const integerPart = bd.bigint >> divex_bigint;
     
         let number = Number(integerPart);
     
         // Fetch only the bits containing the decimal part of the number
-        let decimalPartShifted = bd.bigint - (integerPart << exponent_bigint);
+        let decimalPartShifted = bd.bigint - (integerPart << divex_bigint);
         // Alternative line, around 10-20% slower:
-        // const decimalPartShifted = MathBigInt.getLeastSignificantBits(bd.bigint, exponent_bigint)
+        // const decimalPartShifted = MathBigInt.getLeastSignificantBits(bd.bigint, divex_bigint)
     
         // Convert to a number
     
-        let powerOf2ToUse = powersOfTwoList[bd.exponent];
+        let powerOf2ToUse = powersOfTwoList[bd.divex];
     
         // Is the decimal portion SO BIG that casting it to a Number
         // would immediately make it Infinity? Accomodate for this scenario.
-        if (bd.exponent > MAX_EXPONENT_BEFORE_INFINITY) {
+        if (bd.divex > MAX_DIVEX_BEFORE_INFINITY) {
     
-            powerOf2ToUse = powersOfTwoList[MAX_EXPONENT_BEFORE_INFINITY];
+            powerOf2ToUse = powersOfTwoList[MAX_DIVEX_BEFORE_INFINITY];
     
             // How much should be right-shifted or truncated from the decimal part
             // so that the resulting Number cast is below MAX_VALUE?
             
             // I only want to extract the most-significant 1023 bits of the decimal portion!
             // All I need to do is right shift some more!
-            const remainingShiftNeeded = bd.exponent - MAX_EXPONENT_BEFORE_INFINITY;
+            const remainingShiftNeeded = bd.divex - MAX_DIVEX_BEFORE_INFINITY;
             decimalPartShifted >>= BigInt(remainingShiftNeeded);
         }
     
@@ -675,35 +673,35 @@ const MathBigDec = {
         if (bd.bigint === ZERO) return '0';
         const isNegative = bd.bigint < ZERO;
     
-        const powerOfTenToMultiply = TEN**BigInt(bd.exponent);
+        const powerOfTenToMultiply = TEN**BigInt(bd.divex);
     
         // This makes the number LARGE enough so that when we divide by a
         // power of 2, there won't be any division overflow.
         const largenedNumber = bd.bigint * powerOfTenToMultiply
     
-        const dividedNumber = largenedNumber / getBigintPowerOfTwo(bd.exponent);
+        const dividedNumber = largenedNumber / getBigintPowerOfTwo(bd.divex);
         let string = `${dividedNumber}`
     
-        if (bd.exponent === 0) return string; // Integer
+        if (bd.divex === 0) return string; // Integer
     
         // Modify the string because it has a decimal value...
     
         // Make sure leading zeros aren't left out of the beginning
-        const integerPortion = bd.bigint >> BigInt(bd.exponent);
+        const integerPortion = bd.bigint >> BigInt(bd.divex);
         if (integerPortion === ZERO || integerPortion === NEGONE) {
-            let missingZeros = bd.exponent - string.length;
+            let missingZeros = bd.divex - string.length;
             if (isNegative) missingZeros++;
             if (missingZeros > 0) string = isNegative ? '-' + '0'.repeat(missingZeros) + string.slice(1)
                                                       : '0'.repeat(missingZeros) + string;
         }
     
-        // Insert the decimal point at position 'exponent' from the right side
-        string = insertDotAtIndexFromRight(string, bd.exponent);
+        // Insert the decimal point at position 'divex' from the right side
+        string = insertDotAtIndexFromRight(string, bd.divex);
         string = trimTrailingZeros(string);
     
         // If the integer portion is 0, apphend that to the start! For example, '.75' => '0.75'
         it: if (integerPortion === ZERO || integerPortion === NEGONE) {
-            if (string.startsWith('-1')) break it; // One-off case that creates a bug if this isn't here. Happens when BigDecimal is -1 and exponent is > 0.
+            if (string.startsWith('-1')) break it; // One-off case that creates a bug if this isn't here. Happens when BigDecimal is -1 and divex is > 0.
             if (string.startsWith('-')) string = '-0' + string.slice(1); // '-.75' => '-0.75'
             else string = '0' + string; // '.75' => '0.75'
         }
@@ -777,16 +775,16 @@ const MathBigDec = {
     // Rounding & Truncating...
 
     /**
-     * Rounds a given BigDecimal to the desired exponent level.
-     * If round is false, this truncates instead. But if the provided exponent is higher than the existing exponent, no truncating will occur.
+     * Rounds a given BigDecimal to the desired divex level.
+     * If round is false, this truncates instead. But if the provided divex is higher than the existing divex, no truncating will occur.
      * @param {BigDecimal} bd - The BigDecimal
-     * @param {number} exponent - The desired exponent
+     * @param {number} divex - The desired divex
      * @param {boolean} round - Whether or not to round instead of truncating.
      */
-    setExponent(bd, exponent, round = true) {
-        if (exponent < 0) throw new Error(`Cannot set exponent of BigDecimal below 0! Received: ${exponent}`)
-        watchExponent(exponent); // Protects the exponent from running away to Infinity.
-        const difference = bd.exponent - exponent;
+    setExponent(bd, divex, round = true) {
+        if (divex < 0) throw new Error(`Cannot set divex of BigDecimal below 0! Received: ${divex}`)
+        watchExponent(divex); // Protects the divex from running away to Infinity.
+        const difference = bd.divex - divex;
 
         let roundUp = false;
         if (round && difference > 0) { // Only round if we're shifting right.
@@ -797,7 +795,7 @@ const MathBigDec = {
         
         bd.bigint >>= BigInt(difference);
         if (roundUp) bd.bigint++;
-        bd.exponent = exponent;
+        bd.divex = divex;
     },
 
     /**
@@ -846,8 +844,8 @@ const MathBigDec = {
      * TO BE WRITTEN...
      * 
      * Detects if the provided BigDecimals are equal.
-     * To do this, it first tries to convert them into the same exponent level,
-     * because BigDecimals of different exponent levels may still be equal,
+     * To do this, it first tries to convert them into the same divex level,
+     * because BigDecimals of different divex levels may still be equal,
      * so it's not enough to compare their `bigint` properties.
      * @param {BigDecimal} bd1 - BigDecimal1
      * @param {BigDecimal} bd2 - BigDecimal2
@@ -895,13 +893,13 @@ const MathBigDec = {
      * Returns the mimimum number of bits you need to get the specified digits of precision, rounding up.
      * 
      * For example, to have 3 decimal places of precision in a BigDecimal, or precision to the nearest thousandth,
-     * call this function with precision `3`, and it will return `10` to use for the exponent value of your BigDecimal, because 2^10 ≈ 1000
+     * call this function with precision `3`, and it will return `10` to use for the divex value of your BigDecimal, because 2^10 ≈ 1000
      * 
      * HOWEVER, it is recommended to add some constant amount of extra precision to retain accuracy!
-     * 3.1 exponent 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
-     * performing our arithmetic with 3.125 will quickly exponentiate inaccuracies!
+     * 3.1 divex 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
+     * performing our arithmetic with 3.125 will quickly divexiate inaccuracies!
      * If we added 30 extra bits of precision, then our 4 bits of precision
-     * becomes 34 bits. 3.1 exponent 34 ==> 3.099999999976717... which is a LOT closer to 3.1!
+     * becomes 34 bits. 3.1 divex 34 ==> 3.099999999976717... which is a LOT closer to 3.1!
      * @param {number} precision - The number of decimal places of precision you would like
      * @returns {number} The minimum number of bits needed to obtain that precision, rounded up.
      */
@@ -914,17 +912,17 @@ const MathBigDec = {
 
     /**
      * Estimates the number of effective decimal place precision of a BigDecimal.
-     * This is a little less than one-third of the exponent, or the decimal bit-count precision.
+     * This is a little less than one-third of the divex, or the decimal bit-count precision.
      * @param {BigDecimal} bd - The BigDecimal
      * @returns {number} The number of estimated effective decimal places.
      */
     getEffectiveDecimalPlaces(bd) {
-        if (bd.exponent <= MAX_EXPONENT_BEFORE_INFINITY) {
-            const powerOfTwo = powersOfTwoList[bd.exponent];
+        if (bd.divex <= MAX_DIVEX_BEFORE_INFINITY) {
+            const powerOfTwo = powersOfTwoList[bd.divex];
             const precision = Math.log10(powerOfTwo);
             return Math.floor(precision);
         } else {
-            const powerOfTwo = getBigintPowerOfTwo(bd.exponent)
+            const powerOfTwo = getBigintPowerOfTwo(bd.divex)
             return BigIntMath.log10(powerOfTwo);
         }
     },
@@ -1024,7 +1022,7 @@ const BigNumber = require('bignumber.js'); // BigNumber library
 //     }
 //     console.timeEnd('BigDecimal')
 //     console.log(`BigDecimal product: ${MathBigDec.toString(product)}`)
-//     console.log(`Bits of precision used: ${product.exponent}`)
+//     console.log(`Bits of precision used: ${product.divex}`)
 //     console.log(`Approximate digits of precision used: ${MathBigDec.getEffectiveDecimalPlaces(product)}`)
 //     console.log('')
     
