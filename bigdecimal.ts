@@ -247,17 +247,15 @@ class BigDecimal {
     constructor(number: number | bigint | string | undefined, precision: number = DEFAULT_PRECISION, bigint?: bigint, divex?: number) {
         if (number !== undefined) {
             if (bigint !== undefined || divex !== undefined) throw new Error("You must choose between specifying the number, or bigint & divex parameters.")
-            const type: string = typeof number;
-            if (type === 'number') {
+            if (typeof number === 'number') {
                 if (!isFinite(number)) throw new Error(`Cannot create a BigDecimal from Infinity!`)
-            } else if (type !== 'bigint' && type !== 'string') throw new Error(`Invalid number type! Can be number, bigint, or string. Received: ${type}`);
+            } else if (typeof number !== 'bigint' && typeof number !== 'string') throw new Error(`Invalid number type! Can be number, bigint, or string. Received: ${typeof number}`);
 
             // Convert it to string if not already
             let numberAsString = typeof number === 'number' ? toDecimalString(number) : number;
 
             const dotIndex: number = numberAsString.lastIndexOf('.');
-            const dotIndexFromRight: number = dotIndex !== -1 ? numberAsString.length - dotIndex - 1 : 0; // 0-based from right
-            const decimalDigitCount: number = dotIndexFromRight;
+            const decimalDigitCount: number = dotIndex !== -1 ? numberAsString.length - dotIndex - 1 : 0;
 
             // Set the divex property to the specified precision.
             // If the number can be represented perfectly will a lower divex,
