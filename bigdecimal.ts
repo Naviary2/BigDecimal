@@ -52,7 +52,10 @@
  * 
  */
 
-"use strict";
+
+
+
+import bigintmath from './bigintmath';
 
 
 
@@ -63,7 +66,7 @@ const LOG_TWO: number = Math.log(2);
 const NEGONE: bigint = -1n;
 const ZERO: bigint = 0n;
 const ONE: bigint = 1n;
-const TWO: bigint = 2n;
+// const TWO: bigint = 2n;
 const TEN: bigint = 10n;
 
 // The minimum number of bits used to store decimal bits in BigDecimals.
@@ -404,8 +407,11 @@ const MathBigDec = {
     
         // Create and return a new BigDecimal object with the adjusted product and the desired divex
         // TODO: Pass in a custom precision property, or maximum divex!
-        // Should this be the precision of the first bigdecimal parameter passed in?
-        return new BigDecimal(undefined, undefined, product, divex)
+
+        return {
+            bigint: product,
+            divex,
+        };
     },
 
     // Division...
@@ -505,7 +511,7 @@ const MathBigDec = {
         // To round in binary is easy. If the first digit (or most-significant digit)
         // of the decimal portion is a 1, we round up! If it's 0, we round down.
 
-        const bitAtPosition: 1 | 0 = BigIntMath.getBitAtPositionFromRight(bd.bigint, bd.divex)
+        const bitAtPosition: 1 | 0 = bigintmath.getBitAtPositionFromRight(bd.bigint, bd.divex)
         if (bitAtPosition === 1) integerPart++;
         return integerPart;
     },
@@ -665,7 +671,7 @@ const MathBigDec = {
         if (round && difference > 0) { // Only round if we're shifting right.
             // What is the bit's positition we need to round up if it's a '1'?
             const bitPosition: number = difference;
-            roundUp = BigIntMath.getBitAtPositionFromRight(bd.bigint, bitPosition) === 1
+            roundUp = bigintmath.getBitAtPositionFromRight(bd.bigint, bitPosition) === 1
         }
         
         bd.bigint >>= BigInt(difference);
@@ -798,7 +804,7 @@ const MathBigDec = {
             return Math.floor(precision);
         } else {
             const powerOfTwo: bigint = getBigintPowerOfTwo(bd.divex)
-            return BigIntMath.log10(powerOfTwo);
+            return bigintmath.log10(powerOfTwo);
         }
     },
 
@@ -842,7 +848,7 @@ const MathBigDec = {
 
 
 const n1: string = '1.11223344';
-const bd1: BigDecimal = new BigDecimal(n1);
+const bd1: BigDecimal = NewBigDecimal_FromString(n1);
 console.log(`${n1} converted into a BigDecimal:`)
 MathBigDec.printInfo(bd1)
 
@@ -873,9 +879,8 @@ MathBigDec.printInfo(bd1)
 
 // For testing with other libraries. You may need to install the types:
 // npm install --save-dev @types/decimal.js @types/bignumber.js
-import Decimal from 'decimal.js';
-import BigNumber from 'bignumber.js';
-import bigintmath from './bigintmath';
+// import Decimal from 'decimal.js';
+// import BigNumber from 'bignumber.js';
 
 // (function speedTest_Multiply() {
 
