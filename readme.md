@@ -16,11 +16,10 @@ This allows us to work with arbitrary-sized numbers **with** arbitrary levels of
 
 ---
 
-### An Important Note on Base-2 vs. Base-10
+If you do not need 100% accuracy, I recommend using [break_infinity.js](https://github.com/Patashu/break_infinity.js/tree/master?tab=readme-ov-file)! That is about 5x faster than this library. But it only has limited precision. It uses a mantissa, similar to javascript's normal numbers, "doubles". At any given point it roughly stores only 15 significant digits of precision. It has the same MAX_SAFE_INTEGER value as javascript numbers do, but it does not hit Infinity when the number gets too big.
 
-The core design of `BigDecimal.js` is to be a **base-2** (binary) arithmetic library. This is a source of significant speed advantage, as it aligns with how computers fundamentally process numbers.
+**Where BigDecimal.js shines**, is when you need as much accuracy and precision as Decimal.js or BigNumber.js, just with greater speed! If you need more than 15 digits of precision, *and* you need decimals, BigDecimal.js is a great solution!
 
-However, this creates an important trade-off. Common decimal fractions like `0.1` or `0.2` cannot be represented perfectly in base-2; they become infinitely repeating binary fractions. This is the same reason why `0.1 + 0.2` does not equal `0.3` in standard JavaScript:
-```javascript
-0.1 + 0.2 // returns 0.30000000000000004
-```
+---
+
+This library is very new and is not yet complete. The inspiration for this came for making [Infinite Chess](https://www.infinitechess.org) truly infinite, while remaining fast! Feel free to use this in your own projects! If you find a use for this, I'd love to hear about it! Also, feel free to suggest changes that increase speed or compatibility!
