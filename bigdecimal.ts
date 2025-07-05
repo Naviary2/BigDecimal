@@ -265,7 +265,7 @@ function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECI
 
     let numberAsBigInt: bigint = BigInt(num); // Cast to a bigint now
 
-    numberAsBigInt *= getBigintPowerOfTwo(divex);
+    numberAsBigInt <<= BigInt(divex);
 
     // Now we undo the multiplication by 10^n we did earlier.
     let bigint: bigint = numberAsBigInt / powerOfTen
@@ -276,8 +276,8 @@ function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECI
         // The different in number of digits is the number of
         // bits we need to represent this number exactly!!
         const newExponent: number = `${numberAsBigInt}`.length - `${bigint}`.length;
-        const divexDifferent: number = divex - newExponent
-        bigint /= getBigintPowerOfTwo(divexDifferent)
+        const divexDifference: number = divex - newExponent
+        bigint >> BigInt(divexDifference);
         divex = newExponent;
     }
 
@@ -295,7 +295,7 @@ function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECI
 function NewBigDecimal_FromBigInt(num: bigint, precision: number = DEFAULT_PRECISION): BigDecimal {
     if (precision < 0 || precision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
     return {
-        bigint: num *= getBigintPowerOfTwo(precision),
+        bigint: num << BigInt(precision),
         divex: precision,
     }
 }
@@ -579,13 +579,13 @@ const MathBigDec = {
         if (bd.bigint === ZERO) return '0';
         const isNegative: boolean = bd.bigint < ZERO;
     
-        const powerOfTenToMultiply: bigint = TEN**BigInt(bd.divex);
+        const powerOfTenToMultiply: bigint = TEN ** BigInt(bd.divex);
     
         // This makes the number LARGE enough so that when we divide by a
         // power of 2, there won't be any division overflow.
-        const largenedNumber: bigint = bd.bigint * powerOfTenToMultiply
+        const largenedNumber: bigint = bd.bigint * powerOfTenToMultiply;
     
-        const dividedNumber: bigint = largenedNumber / getBigintPowerOfTwo(bd.divex);
+        const dividedNumber: bigint = largenedNumber >> BigInt(bd.divex);
         let string: string = `${dividedNumber}`
     
         if (bd.divex === 0) return string; // Integer
