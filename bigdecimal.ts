@@ -246,8 +246,9 @@ function NewBigDecimal_FromNumber(num: number, precision: number = DEFAULT_PRECI
 /**
  * Creates a Big Decimal from a string (arbitrarily long)
  * "1905000302050000000000000000000000000000000000.567"
- * @param num
- * @param [precision]
+ * @param num The string to convert.
+ * @param [precision=DEFAULT_PRECISION] The desired precision (divex) for the new BigDecimal.
+ * @returns A new BigDecimal with the value from the string.
  */
 function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECISION): BigDecimal {
     if (precision < 0 || precision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
@@ -256,21 +257,26 @@ function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECI
     const decimalDigitCount: number = dotIndex !== -1 ? num.length - dotIndex - 1 : 0;
 
     // Set the divex property to the specified precision.
-    // If the number can be represented perfectly will a lower divex,
-    // this will be modified soon!
-    let divex: number = precision;
+    // Optionally may be lowered if the number can be
+    // represented perfectly in binary with a lower divex.
+    const divex: number = precision;
 
-    // Make the number an integer by multiplying by 10^n where n is the decimal digit count.
-    const powerOfTen: bigint = TEN**BigInt(decimalDigitCount);
-    // We can accomplish the same thing by just removing the dot instead.
+    // 1. Calculate 5^N which is faster than 10^N.
+    const powerOfFive: bigint = FIVE ** BigInt(decimalDigitCount);
+
+    // 2. Make the string an integer.
     if (dotIndex !== -1) num = num.slice(0, dotIndex) + num.slice(dotIndex + 1);
+    let numberAsBigInt: bigint = BigInt(num);
 
-    let numberAsBigInt: bigint = BigInt(num); // Cast to a bigint now
+    // 3. Scale the integer by the necessary power of 2.
+    // The total scaling is 2^(divex - decimalDigitCount).
+    const shiftAmount = BigInt(divex - decimalDigitCount);
+    if (shiftAmount > 0) numberAsBigInt <<= shiftAmount;
+    else if (shiftAmount < 0) numberAsBigInt >>= -shiftAmount; // A negative shift is a right shift.
+    // If shiftAmount is 0, no shift is needed.
 
-    numberAsBigInt <<= BigInt(divex);
-
-    // Now we undo the multiplication by 10^n we did earlier.
-    let bigint: bigint = numberAsBigInt / powerOfTen
+    // 4. Finally, perform the division by the power of 5.
+    const bigint: bigint = numberAsBigInt / powerOfFive;
 
     // If this is zero, we can represent this number perfectly with a lower divex!
     // const difference: bigint = numberAsBigInt - (bigint * powerOfTen)
@@ -286,7 +292,7 @@ function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECI
     return {
         bigint,
         divex,
-    }
+    };
 }
 
 /**
