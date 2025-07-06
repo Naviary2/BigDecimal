@@ -301,16 +301,6 @@ function NewBigDecimal_FromBigInt(num: bigint, precision: number = DEFAULT_PRECI
 
 
 /**
- * Throws an error if the provided divex is beyond `MAX_DIVEX`.
- * It is assumed it's running away to Infinity.
- * @param divex - The `divex` property of the BigDecimal
- */
-function watchExponent(divex: number): void  {
-    if (divex > MAX_DIVEX)
-        throw new Error(`Cannot create a BigDecimal with divex ${divex}! Out of range. Max allowed: ${MAX_DIVEX}. If you need more range, please increase the MAX_DIVEX variable.`)
-}
-
-/**
  * Converts a finite number to a string in full decimal notation, avoiding scientific notation.
  * This method is reliable for all finite numbers, correctly handling all edge cases.
  *
@@ -462,7 +452,7 @@ function multiply(bd1: BigDecimal, bd2: BigDecimal, mode: 0 | 1 | 2 = 0): BigDec
 
 /**
  * Divides the first BigDecimal by the second, producing a result with a predictable divex.
- * The final divex is determined by the maximum of the inputs' divex and DEFAULT_PRECISION.
+ * The final divex is determined by the maximum of the inputs' divex.
  * This prevents the divex from growing uncontrollably with repeated divisions.
  * @param bd1 - The dividend.
  * @param bd2 - The divisor.
@@ -476,7 +466,7 @@ function divide(bd1: BigDecimal, bd2: BigDecimal, workingPrecision: number = DEF
 	}
 
 	// 1. Determine the predictable, final divex for the result.
-	const targetDivex = Math.max(bd1.divex, bd2.divex, DEFAULT_PRECISION);
+	const targetDivex = Math.max(bd1.divex, bd2.divex);
 
 	// 2. Calculate the total shift needed for the dividend. This includes:
 	//    - The shift to get to the target precision.
@@ -494,9 +484,6 @@ function divide(bd1: BigDecimal, bd2: BigDecimal, workingPrecision: number = DEF
 	const roundingBit = (quotient >> BigInt(workingPrecision - 1)) & ONE;
 	let finalQuotient = quotient >> BigInt(workingPrecision);
 	if (roundingBit === ONE) finalQuotient++;
-	
-	// The watchExponent check is still useful as a final sanity check.
-	watchExponent(targetDivex);
 
 	return {
 		bigint: finalQuotient,
@@ -679,8 +666,10 @@ function clone(bd: BigDecimal): BigDecimal {
  * @param round - Whether or not to round instead of truncating.
  */
 function setExponent(bd: BigDecimal, divex: number, round: boolean = true): void {
-	if (divex < 0) throw new Error(`Cannot set divex of BigDecimal below 0! Received: ${divex}`)
-	watchExponent(divex); // Protects the divex from running away to Infinity.
+	if (divex < 0) throw new Error(`Cannot set divex of BigDecimal below 0! Received: ${divex}`);
+    // Throw an error if the provided divex is beyond `MAX_DIVEX`.
+    if (divex > MAX_DIVEX) throw new Error(`Cannot create a BigDecimal with divex ${divex}! Out of range. Max allowed: ${MAX_DIVEX}. If you need more range, please increase the MAX_DIVEX variable.`);
+
 	const difference: number = bd.divex - divex;
 
 	let roundUp: boolean = false;
@@ -810,10 +799,10 @@ function getEffectiveDecimalPlaces(bd: BigDecimal): number {
  */
 function printInfo(bd: BigDecimal): void {
 	console.log(bd)
-	console.log(`Binary string: ${bigdecmath.toDebugBinaryString(bd)}`)
+	console.log(`Binary string: ${toDebugBinaryString(bd)}`);
 	// console.log(`Bit length: ${MathBigDec.getBitLength(bd)}`)
-	console.log(`Converted to String: ${bigdecmath.toString(bd)}`); // This is also its EXACT value.
-	console.log(`Converted to Number: ${bigdecmath.toNumber(bd)}`)
+	console.log(`Converted to String: ${toString(bd)}`); // This is also its EXACT value.
+	console.log(`Converted to Number: ${toNumber(bd)}`);
 	console.log('----------------------------')
 }
 
