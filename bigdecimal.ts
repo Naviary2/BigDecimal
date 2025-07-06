@@ -696,7 +696,36 @@ function setExponent(bd: BigDecimal, divex: number, round: boolean = true): void
 }
 
 // Comparisons...
-// HOLD OFF ON THESE FOR NOW, I'M NOT SURE IF WE WILL NEED THEM
+
+/**
+ * Compares two BigDecimals.
+ * @param bd1 The first BigDecimal.
+ * @param bd2 The second BigDecimal.
+ * @returns -1 if bd1 < bd2, 0 if bd1 === bd2, and 1 if bd1 > bd2.
+ */
+function compare(bd1: BigDecimal, bd2: BigDecimal): -1 | 0 | 1 {
+    // To compare, we must bring them to a common divex, just like in add/subtract.
+    // However, we don't need to create new objects.
+
+    let bigint1 = bd1.bigint;
+    let bigint2 = bd2.bigint;
+
+    if (bd1.divex > bd2.divex) {
+        // Scale up bd2 to match bd1's divex.
+        bigint2 <<= BigInt(bd1.divex - bd2.divex);
+    } else if (bd2.divex > bd1.divex) {
+        // Scale up bd1 to match bd2's divex.
+        bigint1 <<= BigInt(bd2.divex - bd1.divex);
+    }
+    // If divex are equal, no scaling is needed.
+
+    // Now that they are at the same scale, we can directly compare the bigints.
+    if (bigint1 < bigint2) return -1;
+    if (bigint1 > bigint2) return 1;
+    return 0;
+}
+
+// HOLD OFF ON THESE FOR NOW, I'M NOT SURE IF WE WILL NEED THEM...
 
 // /**
 //  * TO BE WRITTEN...
@@ -800,6 +829,9 @@ export default {
 	toDebugBinaryString,
 	clone,
 	setExponent,
+
+    compare,
+
 	howManyBitsForDigitsOfPrecision,
 	getEffectiveDecimalPlaces,
 	printInfo
