@@ -67,6 +67,7 @@ const NEGONE: bigint = -1n;
 const ZERO: bigint = 0n;
 const ONE: bigint = 1n;
 // const TWO: bigint = 2n;
+const FIVE: bigint = 5n;
 const TEN: bigint = 10n;
 
 // The minimum number of bits used to store decimal bits in BigDecimals.
@@ -621,22 +622,35 @@ const MathBigDec = {
         const absBigInt = isNegative ? -bd.bigint : bd.bigint;
         const divexBigInt = BigInt(bd.divex);
 
-        // 1. Calculate all digits together by scaling with 10^divex.
-        const allDigits = (absBigInt * (TEN ** divexBigInt)) >> divexBigInt;
+        // 1. Separate the integer and fractional parts.
+        const integerPart = absBigInt >> divexBigInt;
+        const fractionalPart = absBigInt - (integerPart << divexBigInt);
 
-        // 2. Pad the resulting string with leading zeros to ensure it's long enough
-        // to place the decimal point correctly. Adding 1 handles numbers < 1.
-        const fullString = allDigits.toString().padStart(bd.divex + 1, '0');
+        // If there's no fraction, we are done. This is a crucial optimization.
+        if (fractionalPart === ZERO) return (isNegative ? '-' : '') + integerPart.toString();
 
-        // 3. Insert the decimal point.
-        const dotIndex = fullString.length - bd.divex;
-        let result = fullString.slice(0, dotIndex) + '.' + fullString.slice(dotIndex);
+        // 2. Convert the fractional part to a decimal string using the 5**N shortcut.
+        // The math is: (fractional / 2^d) * 10^d = fractional * 5^d
+        const powerOfFive = FIVE ** divexBigInt;
+        const decimalDigits = fractionalPart * powerOfFive;
+        
+        // 3. Pad the decimal string with leading zeros to match the divex.
+        let decimalString = decimalDigits.toString().padStart(bd.divex, '0');
+        
+        // And trim any trailing zeros.
+        let i = decimalString.length - 1;
+        while (i >= 0 && decimalString[i] === '0') {
+            i--;
+        }
+        decimalString = decimalString.slice(0, i + 1);
 
-        // 4. Trim unnecessary trailing zeros from the fractional part.
-        result = result.replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
-
-        // 5. Add the negative sign if needed and return.
-        return isNegative ? '-' + result : result;
+        // 4. Combine the parts and the sign into the final string.
+        const sign = isNegative ? '-' : '';
+        const integerString = integerPart.toString();
+        
+        // This check is for robustness in case the entire fraction was zeros.
+        if (decimalString.length === 0)  return sign + integerString;
+        else return sign + integerString + '.' + decimalString;
     },
 
     /**
