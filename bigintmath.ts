@@ -18,51 +18,6 @@ const TWO: bigint = 2n;
 // const TEN: bigint = 10n;
 
 /**
- * Calculate the logarithm base 2 of the specified BigInt. Returns an integer.
- * @param bigint - The BigInt. 0+
- * @returns The logarithm to base 2
- */
-function log2(bigint: bigint): number {
-    if (bigint === ZERO) return -Infinity; // Matches Math.log2(0)
-    if (bigint < ZERO) return NaN;
-    
-    return bigint.toString(2).length - 1;
-}
-
-/**
-* Calculates the logarithm base 10 of the specified BigInt. Returns an integer.
-* @param bigint - The BigInt. 0+
-* @returns The logarithm to base 10
-*/
-function log10(bigint: bigint): number {
-    if (bigint === ZERO) return -Infinity; // Matches Math.log2(0)
-    if (bigint < ZERO) return NaN;
-
-    return bigint.toString(10).length - 1;
-}
-
-/**
- * Calculates the logarithm of the specified base of the BigInt. Returns an integer.
- * @param bigint - The BigInt. 0+
- * @param base - The base of the logarithm
- * @returns The logarithm to base N
- */
-function logN(bigint: bigint, base: bigint): bigint {
-    if (bigint <= ZERO) throw new Error('logN is not defined for an input of 0 or less.');
-    if (base <= ONE) throw new Error('Logarithm base must be greater than 1.');
-
-    let result: bigint = ZERO;
-    let tempNumber: bigint = bigint;
-
-    while (tempNumber >= base) {
-        tempNumber /= base;
-        result++;
-    }
-
-    return result;
-}
-
-/**
  * Calculates the absolute value of a bigint
  * @param bigint - The BigInt
  * @returns The absolute value
@@ -71,42 +26,89 @@ function abs(bigint: bigint): bigint {
     return bigint < ZERO ? -bigint : bigint;
 }
 
-/**
- * Returns the specified number of least significant.
- * This can be used to extract only the decimal portion of a BigDecimal by passing in the divex number for the count.
- * @param bigint - The BigInt
- * @param count - The number of bits to get
- * @returns A BigInt containing only the specified bits
- */
-function getLeastSignificantBits(bigint: bigint, count: bigint): bigint {
-    if (count < ZERO) throw new Error('Count of bits cannot be negative.');
+// EVERYTHING COMMENTED OUT I AM UNSURE IF WE WILL NEED.
 
-    // Create a bitmask with the least significant n bits set to 1
-    let bitmask: bigint = (ONE << count) - ONE; // If count is 5, this looks like: 11111
-
-    // Apply bitwise AND operation with the bitmask to get the least significant bits
-    let leastSignificantBits: bigint = bigint & bitmask;
-
-    return leastSignificantBits;
-}
-
-/**
- * Gets the bit at the specified position from the right. 1-based
- * @param bigint - The BigInt
- * @param position - The position from right. 1-based
- * @returns 1 or 0
- */
-function getBitAtPositionFromRight(bigint: bigint, position: number): 1 | 0 {
-    if (position < 1 || !Number.isInteger(position)) throw new Error(`Position must be a positive integer. Received: ${position}`);
+// /**
+//  * Calculate the logarithm base 2 of the specified BigInt. Returns an integer.
+//  * @param bigint - The BigInt. 0+
+//  * @returns The logarithm to base 2
+//  */
+// function log2(bigint: bigint): number {
+//     if (bigint === ZERO) return -Infinity; // Matches Math.log2(0)
+//     if (bigint < ZERO) return NaN;
     
-    // Create a mask where there is a single 1 at the position.
-    // For example, if our position is 5, the resulting bitmask is '10000'.
-    let bitmask: bigint = ONE << (BigInt(position) - ONE);
-    // Apply bitwise AND operation with the bitmask to test if this bit is a 1
-    const result: bigint = bigint & bitmask;
-    // If the result is greater than zero, we know the bit is a 1!
-    return result > ZERO ? 1 : 0;
-}
+//     return bigint.toString(2).length - 1;
+// }
+
+// /**
+// * Calculates the logarithm base 10 of the specified BigInt. Returns an integer.
+// * @param bigint - The BigInt. 0+
+// * @returns The logarithm to base 10
+// */
+// function log10(bigint: bigint): number {
+//     if (bigint === ZERO) return -Infinity; // Matches Math.log2(0)
+//     if (bigint < ZERO) return NaN;
+
+//     return bigint.toString(10).length - 1;
+// }
+
+// /**
+//  * Calculates the logarithm of the specified base of the BigInt. Returns an integer.
+//  * @param bigint - The BigInt. 0+
+//  * @param base - The base of the logarithm
+//  * @returns The logarithm to base N
+//  */
+// function logN(bigint: bigint, base: bigint): bigint {
+//     if (bigint <= ZERO) throw new Error('logN is not defined for an input of 0 or less.');
+//     if (base <= ONE) throw new Error('Logarithm base must be greater than 1.');
+
+//     let result: bigint = ZERO;
+//     let tempNumber: bigint = bigint;
+
+//     while (tempNumber >= base) {
+//         tempNumber /= base;
+//         result++;
+//     }
+
+//     return result;
+// }
+
+// /**
+//  * Returns the specified number of least significant.
+//  * This can be used to extract only the decimal portion of a BigDecimal by passing in the divex number for the count.
+//  * @param bigint - The BigInt
+//  * @param count - The number of bits to get
+//  * @returns A BigInt containing only the specified bits
+//  */
+// function getLeastSignificantBits(bigint: bigint, count: bigint): bigint {
+//     if (count < ZERO) throw new Error('Count of bits cannot be negative.');
+
+//     // Create a bitmask with the least significant n bits set to 1
+//     let bitmask: bigint = (ONE << count) - ONE; // If count is 5, this looks like: 11111
+
+//     // Apply bitwise AND operation with the bitmask to get the least significant bits
+//     let leastSignificantBits: bigint = bigint & bitmask;
+
+//     return leastSignificantBits;
+// }
+
+// /**
+//  * Gets the bit at the specified position from the right. 1-based
+//  * @param bigint - The BigInt
+//  * @param position - The position from right. 1-based
+//  * @returns 1 or 0
+//  */
+// function getBitAtPositionFromRight(bigint: bigint, position: number): 1 | 0 {
+//     if (position < 1 || !Number.isInteger(position)) throw new Error(`Position must be a positive integer. Received: ${position}`);
+    
+//     // Create a mask where there is a single 1 at the position.
+//     // For example, if our position is 5, the resulting bitmask is '10000'.
+//     let bitmask: bigint = ONE << (BigInt(position) - ONE);
+//     // Apply bitwise AND operation with the bitmask to test if this bit is a 1
+//     const result: bigint = bigint & bitmask;
+//     // If the result is greater than zero, we know the bit is a 1!
+//     return result > ZERO ? 1 : 0;
+// }
 
 // /**
 //  * Returns the bigint in binary form, **exactly** like how computers store them,
@@ -147,6 +149,8 @@ function getBitAtPositionFromRight(bigint: bigint, position: number): 1 | 0 {
 // }
 
 /**
+ * NEW FUNCTION WITH HELP OF GEMINI
+ * 
  * Returns a bigint's binary representation in a standardized, debug-friendly format.
  * - It correctly displays negative numbers using two's complement.
  * - It automatically calculates the necessary bit-width and pads it to the nearest byte (8 bits).
@@ -200,11 +204,11 @@ function toDebugBinaryString(bigint: bigint): string {
 }
 
 export default {
-    log2,
-    log10,
-    logN,
     abs,
-    getLeastSignificantBits,
-    getBitAtPositionFromRight,
+    // log2,
+    // log10,
+    // logN,
+    // getLeastSignificantBits,
+    // getBitAtPositionFromRight,
     toDebugBinaryString,
 }
