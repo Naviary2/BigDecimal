@@ -236,22 +236,28 @@ function NewBigDecimal_FromNumber(num: number, precision: number = DEFAULT_PRECI
 /**
  * Creates a Big Decimal from a string (arbitrarily long)
  * "1905000302050000000000000000000000000000000000.567"
+ * The final precision is calculated dynamically to preserve the input string's
+ * precision, plus a "working precision" for future calculations.
  * @param num The string to convert.
- * @param [precision=DEFAULT_PRECISION] The desired precision (divex) for the new BigDecimal.
+ * @param [workingPrecision=DEFAULT_PRECISION] The amount of extra precision to add.
  * @returns A new BigDecimal with the value from the string.
  */
-function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECISION): BigDecimal {
-    if (precision < 0 || precision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
+function NewBigDecimal_FromString(num: string, workingPrecision: number = DEFAULT_PRECISION): BigDecimal {
+    if (workingPrecision < 0 || workingPrecision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${workingPrecision}`);
 
     const dotIndex: number = num.lastIndexOf('.');
     const decimalDigitCount: number = dotIndex !== -1 ? num.length - dotIndex - 1 : 0;
 
-    // Set the divex property to the specified precision.
-    // Optionally may be lowered if the number can be
-    // represented perfectly in binary with a lower divex.
-    const divex: number = precision;
+    // 1. Calculate the minimum bits needed to represent the input string's fractional part.
+    const minBitsForInput: number = howManyBitsForDigitsOfPrecision(decimalDigitCount);
 
-    // 1. Calculate 5^N which is faster than 10^N.
+    // 2. The final divex is this minimum, plus the requested "working precision".
+    //    This ensures we always have enough precision for the input, plus a buffer for future math.
+    const divex: number = minBitsForInput + workingPrecision;
+    // Check if the calculated divex is within our library's limits.
+    if (divex > MAX_DIVEX) throw new Error(`Precision after applying working precision exceeded ${MAX_DIVEX}. Please use a smaller input number or working precision.`);
+
+    // 1. Calculate 5^N.
     const powerOfFive: bigint = FIVE ** BigInt(decimalDigitCount);
 
     // 2. Make the string an integer.
@@ -263,22 +269,10 @@ function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECI
     const shiftAmount = BigInt(divex - decimalDigitCount);
     if (shiftAmount > 0) numberAsBigInt <<= shiftAmount;
     else if (shiftAmount < 0) numberAsBigInt >>= -shiftAmount; // A negative shift is a right shift.
-    // If shiftAmount is 0, no shift is needed.
 
     // 4. Finally, perform the division by the power of 5.
     const bigint: bigint = numberAsBigInt / powerOfFive;
-
-    // If this is zero, we can represent this number perfectly with a lower divex!
-    // const difference: bigint = numberAsBigInt - (bigint * powerOfTen)
-    // if (difference === ZERO) {
-    //     // The different in number of digits is the number of
-    //     // bits we need to represent this number exactly!!
-    //     const newExponent: number = `${numberAsBigInt}`.length - `${bigint}`.length;
-    //     const divexDifference: number = divex - newExponent
-    //     bigint >> BigInt(divexDifference);
-    //     divex = newExponent;
-    // }
-
+    
     return {
         bigint,
         divex,
@@ -361,9 +355,6 @@ function toFullDecimalString(num: number): string {
 function add(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 	// To add, both BigDecimals must have the same divex (common denominator).
 	// We'll scale the one with the lower divex up to match the higher one.
-
-	let resultDivex: number;
-	let sum: bigint;
 
 	if (bd1.divex === bd2.divex) {
 		// Exponents are the same, a simple bigint addition is sufficient.
