@@ -97,7 +97,8 @@ const powersOfTwoList: number[] = (() => {
 })();
 
 // Any divex greater than 1023 can lead to Number casts greater
-// than MAX_VALUE or equal to Infinity, because 2^1024 === Infinity.
+// than MAX_VALUE or equal to Infinity, because 1 * 2^1024 === Infinity,
+// but 1 * 2^1023 does NOT. And 1.0 encompasses all possible fractional values!
 // BigDecimals with divexs THAT big need special care!
 const MAX_DIVEX_BEFORE_INFINITY: number = powersOfTwoList.length - 1; // 1023
 
@@ -271,15 +272,15 @@ function NewBigDecimal_FromString(num: string, precision: number = DEFAULT_PRECI
     let bigint: bigint = numberAsBigInt / powerOfTen
 
     // If this is zero, we can represent this number perfectly with a lower divex!
-    const difference: bigint = numberAsBigInt - (bigint * powerOfTen)
-    if (difference === ZERO) {
-        // The different in number of digits is the number of
-        // bits we need to represent this number exactly!!
-        const newExponent: number = `${numberAsBigInt}`.length - `${bigint}`.length;
-        const divexDifference: number = divex - newExponent
-        bigint >> BigInt(divexDifference);
-        divex = newExponent;
-    }
+    // const difference: bigint = numberAsBigInt - (bigint * powerOfTen)
+    // if (difference === ZERO) {
+    //     // The different in number of digits is the number of
+    //     // bits we need to represent this number exactly!!
+    //     const newExponent: number = `${numberAsBigInt}`.length - `${bigint}`.length;
+    //     const divexDifference: number = divex - newExponent
+    //     bigint >> BigInt(divexDifference);
+    //     divex = newExponent;
+    // }
 
     return {
         bigint,
@@ -344,7 +345,7 @@ function toFullDecimalString(num: number): string {
 			const zerosToPad = exponent - fracPart.length;
 			return sign + allDigits + '0'.repeat(zerosToPad);
 		} else {
-			// Case B (THE FIX): The decimal point lands within the fractional digits.
+			// Case B: The decimal point lands within the fractional digits.
 			// e.g., 1.2345e2 -> 123.45
 			const decimalIndex = intPart.length + exponent;
 			const allDigits = intPart + fracPart;
@@ -361,23 +362,78 @@ function toFullDecimalString(num: number): string {
 
 
 
-/** 
- * Math and arithmetic methods performed on BigDecimals 
- * 
- * TODO: Move many of these into the BigDecimal class.
- * */
+/** Math and arithmetic methods performed on BigDecimals */
 const MathBigDec = {
 
-    // Addition...
+    /**
+     * Adds two BigDecimal numbers.
+     * The resulting BigDecimal will have a divex equal to the maximum divex of the two operands to prevent precision loss.
+     * @param bd1 - The first addend.
+     * @param bd2 - The second addend.
+     * @returns The sum of bd1 and bd2.
+     */
+    add(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
+        // To add, both BigDecimals must have the same divex (common denominator).
+        // We'll scale the one with the lower divex up to match the higher one.
 
-    add(bd1: BigDecimal, bd2: BigDecimal): void {
+        let resultDivex: number;
+        let sum: bigint;
 
+        if (bd1.divex === bd2.divex) {
+            // Exponents are the same, a simple bigint addition is sufficient.
+            return {
+                bigint: bd1.bigint + bd2.bigint,
+                divex: bd1.divex
+            }
+        } else if (bd1.divex > bd2.divex) {
+            // Scale up bd2 to match bd1's divex
+            const bd2DivexAdjusted = bd2.bigint << BigInt(bd1.divex - bd2.divex);
+            return {
+                bigint: bd1.bigint + bd2DivexAdjusted,
+                divex: bd1.divex
+            }
+        } else { // divex2 > divex1
+            // Scale up bd1 to match bd2's divex
+            const bd1DivexAdjusted = bd1.bigint << BigInt(bd2.divex - bd1.divex);
+            return {
+                bigint: bd1DivexAdjusted + bd2.bigint,
+                divex: bd2.divex
+            }
+        }
     },
 
-    // Subtraction...
+    /**
+     * Subtracts the second BigDecimal from the first.
+     * The resulting BigDecimal will have a divex equal to the maximum divex of the two operands to prevent precision loss.
+     * @param bd1 - The minuend.
+     * @param bd2 - The subtrahend.
+     * @returns The difference of bd1 and bd2 (bd1 - bd2).
+     */
+    subtract(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
+        // To subtract, both BigDecimals must have the same divex (common denominator).
+        // We scale the one with the lower divex up to match the higher one.
 
-    subtract(bd1: BigDecimal, bd2: BigDecimal): void {
-
+        if (bd1.divex === bd2.divex) {
+            // Exponents are the same, a simple bigint subtraction is sufficient.
+            return {
+                bigint: bd1.bigint - bd2.bigint,
+                divex: bd1.divex
+            };
+        } else if (bd1.divex > bd2.divex) {
+            // Scale up bd2's bigint to match bd1's divex
+            const bd2BigIntAdjusted = bd2.bigint << BigInt(bd1.divex - bd2.divex);
+            return {
+                bigint: bd1.bigint - bd2BigIntAdjusted,
+                divex: bd1.divex
+            };
+        } else { // bd2.divex > bd1.divex
+            // Scale up bd1's bigint to match bd2's divex
+            const bd1BigIntAdjusted = bd1.bigint << BigInt(bd2.divex - bd1.divex);
+            return {
+                bigint: bd1BigIntAdjusted - bd2.bigint,
+                divex: bd2.divex
+            };
+        }
     },
 
     // Multiplication...
@@ -386,185 +442,166 @@ const MathBigDec = {
      * Multiplies two BigDecimal numbers.
      * @param bd1 - Factor1
      * @param bd2 - Factor2
-     * @param mode - The mode for determining the new divex property.
-     * - `0` is the default and will use the maximum divex of the 2 factors.
-     * - `1` will use the sum of the factors divexs. This yields 100% accuracy (no truncating), but requires more storage, and more compute for future operations. This can also make the divex run away to infinity if used repeatedly.
-     * - `2` will use the minimum divex of the 2 factors. This yields the least accuracy, truncating a lot, but it is the fastest!
+     * @param mode - The mode for determining the new divex.
+     * - `0` (default): Uses the maximum divex of the two factors.
+     * - `1`: Uses the sum of the factors' divexs for full precision.
+     * - `2`: Uses the minimum divex of the two factors.
      * @returns The product of BigDecimal1 and BigDecimal2.
      */
     multiply(bd1: BigDecimal, bd2: BigDecimal, mode: 0 | 1 | 2 = 0): BigDecimal {
-        const divex: number = mode === 0 ? Math.max(bd1.divex, bd2.divex) // Max
-                       : mode === 1      ? bd1.divex + bd2.divex          // Add
-                       : /* mode === 2 */  Math.min(bd1.divex, bd2.divex) // Min
+        const targetDivex: number = 
+            mode === 0 ? Math.max(bd1.divex, bd2.divex)  // Max
+          : mode === 1 ? bd1.divex + bd2.divex           // Add
+          :              Math.min(bd1.divex, bd2.divex); // Min
 
-        const rawProduct: bigint = bd1.bigint * bd2.bigint;
-        const newExponent: number = bd1.divex + bd2.divex;
-    
-        const divexDifference: number = newExponent - divex;
-    
-        // Bit shift the rawProduct by the divex difference to reach the desired divex level
-        const product: bigint = rawProduct >> BigInt(divexDifference);
-    
-        // Create and return a new BigDecimal object with the adjusted product and the desired divex
-        // TODO: Pass in a custom precision property, or maximum divex!
+        // The true divex of the raw product is (bd1.divex + bd2.divex).
+        // We shift the raw product to scale it to the targetDivex.
+        const shiftAmount = BigInt((bd1.divex + bd2.divex) - targetDivex);
 
         return {
-            bigint: product,
-            divex,
+            bigint: (bd1.bigint * bd2.bigint) >> shiftAmount,
+            divex: targetDivex,
         };
     },
 
-    // Division...
+    /**
+     * Divides the first BigDecimal by the second, producing a result with a predictable divex.
+     * The final divex is determined by the maximum of the inputs' divex and DEFAULT_PRECISION.
+     * This prevents the divex from growing uncontrollably with repeated divisions.
+     * @param bd1 - The dividend.
+     * @param bd2 - The divisor.
+     * @param [workingPrecision=DEFAULT_PRECISION] - Extra bits for internal calculation to prevent rounding errors.
+     * @returns The quotient of bd1 and bd2 (bd1 / bd2).
+     * @throws {Error} If attempting to divide by zero.
+     */
+    divide(bd1: BigDecimal, bd2: BigDecimal, workingPrecision: number = DEFAULT_PRECISION): BigDecimal {
+        if (bd2.bigint === ZERO) {
+            throw new Error("Division by zero is not allowed.");
+        }
 
-    divide(bd1: BigDecimal, bd2: BigDecimal): void {
+        // 1. Determine the predictable, final divex for the result.
+        const targetDivex = Math.max(bd1.divex, bd2.divex, DEFAULT_PRECISION);
 
-    },
+        // 2. Calculate the total shift needed for the dividend. This includes:
+        //    - The shift to get to the target precision.
+        //    - The extra "workingPrecision" to ensure accuracy during division.
+        const shift = BigInt(targetDivex - bd1.divex + bd2.divex + workingPrecision);
 
-    mod(bd1: BigDecimal, bd2: BigDecimal): void {
+        // 3. Scale the dividend up.
+        const scaledDividend = bd1.bigint << shift;
 
-    },
+        // 4. Perform the integer division. The result has `workingPrecision` extra bits.
+        const quotient = scaledDividend / bd2.bigint;
+        
+        // 5. Round the result by shifting it back down by `workingPrecision`.
+        //    We check the most significant bit of the part being discarded to round correctly.
+        const roundingBit = (quotient >> BigInt(workingPrecision - 1)) & ONE;
+        let finalQuotient = quotient >> BigInt(workingPrecision);
+        if (roundingBit === ONE) finalQuotient++;
+        
+        // The watchExponent check is still useful as a final sanity check.
+        watchExponent(targetDivex);
 
-    // Exponent...
-
-    squared(bd: BigDecimal): void {
-
-    },
-
-    cubed(bd: BigDecimal): void {
-
-    },
-
-    pow(bd: BigDecimal, exp: number): void {
-
-    },
-
-    // Root...
-
-    squareRoot(bd: BigDecimal): void {
-
-    },
-
-    cubeRoot(bd: BigDecimal): void {
-
-    },
-
-    root(bd: BigDecimal, root: number): void {
-
-    },
-
-    // Logarithm...
-
-    log2(bd: BigDecimal): void {
-
-    },
-
-    // Natural logarithm
-    logE(bd: BigDecimal): void {
-
-    },
-
-    log10(bd: BigDecimal): void {
-
-    },
-
-    logN(bd: BigDecimal, n: number): void {
-
+        return {
+            bigint: finalQuotient,
+            divex: targetDivex
+        };
     },
 
     // Other...
 
     /**
-     * Returns a new BigDecimal that is the absolute value of the provided BigDecimal
-     * @param bd - The BigDecimal
-     * @returns The absolute value
+     * Returns a new BigDecimal that is the absolute value of the provided BigDecimal.
+     * @param bd - The BigDecimal.
+     * @returns A new BigDecimal representing the absolute value.
      */
-    abs(bd: BigDecimal): void {
-
-    },
-
-    /**
-     * Negates the provided BigDecimal, modifying the original.
-     * @param bd - The BigDecimal
-     * @returns The negated BigDecimal
-     */
-    negate(bd: BigDecimal): void {
-        bd.bigint *= NEGONE;
+    abs(bd: BigDecimal): BigDecimal {
+        // The sign is determined solely by the bigint.
+        // The divex (scale) remains the same.
+        // We return a new object and do not modify the original.
+        return {
+            bigint: bd.bigint < ZERO ? -bd.bigint : bd.bigint,
+            divex: bd.divex
+        };
     },
 
     // Castings...
 
     /**
-     * Converts a BigDecimal to a BigInt, rounding to the nearest integer by default.
-     * @param bd - The BigDecimal
-     * @param round - If *true*, it will round to the nearest BigInt. If *false*, it will truncate the decimal value, rounding in the negative direction. Default: *true*
-     * @returns The BigInt
+     * Converts a BigDecimal to a BigInt, always rounding to the nearest integer.
+     * This uses "round half up" (towards positive infinity).
+     * For example, 2.5 becomes 3, and -2.5 becomes -2.
+     * @param bd The BigDecimal to convert.
+     * @returns The rounded BigInt value.
      */
-    toBigInt(bd: BigDecimal, round: boolean = true): bigint {
-        const divex_bigint: bigint = BigInt(bd.divex);
-    
-        // Bit shift to the right to get the integer part. This truncates any decimal information.
-        let integerPart: bigint = bd.bigint >> divex_bigint;
-    
-        if (!round || bd.divex === 0) return integerPart;
-    
-        // We are rounding the decimal digits!
-        // To round in binary is easy. If the first digit (or most-significant digit)
-        // of the decimal portion is a 1, we round up! If it's 0, we round down.
+    toBigInt(bd: BigDecimal): bigint {
+        // If divex is 0, the number is already a correctly scaled integer.
+        if (bd.divex === 0) return bd.bigint;
 
-        const bitAtPosition: 1 | 0 = bigintmath.getBitAtPositionFromRight(bd.bigint, bd.divex)
-        if (bitAtPosition === 1) integerPart++;
-        return integerPart;
+        const divexBigInt = BigInt(bd.divex);
+
+        // To "round half up", we add 0.5 before truncating.
+        // In our fixed-point system, "0.5" is represented by 2^(divex - 1).
+        const half = ONE << (divexBigInt - ONE);
+        
+        // Add half and then truncate. The arithmetic right shift `>>` handles truncation
+        // correctly for both positive and negative numbers.
+        const adjustedBigInt = bd.bigint + half;
+        
+        return adjustedBigInt >> divexBigInt;
     },
 
     /**
      * Converts a BigDecimal to a number (javascript double).
-     * If it's greater than Number.MAX_VALUE, this will return Infinity or -Infinity likewise.
-     * @param bd - The BigDecimal
-     * @returns The number as a normal javascript double
+     * This conversion is lossy if the BigDecimal's precision exceeds that of a 64-bit float.
+     * If the value exceeds Number.MAX_VALUE, it will correctly return Infinity or -Infinity.
+     * @param bd - The BigDecimal to convert.
+     * @returns The value as a standard javascript number.
      */
     toNumber(bd: BigDecimal): number {
-        const divex_bigint: bigint = BigInt(bd.divex);
-    
-        // Extract the BigInt portion out of the BigDecimal
-        const integerPart: bigint = bd.bigint >> divex_bigint;
-    
-        let number: number = Number(integerPart);
-    
-        // Fetch only the bits containing the decimal part of the number
-        let decimalPartShifted: bigint = bd.bigint - (integerPart << divex_bigint);
+        const divexBigInt = BigInt(bd.divex);
+
+        // 1. Separate the integer part without losing any precision yet.
+        const integerPart = bd.bigint >> divexBigInt;
+
+        // 2. Isolate the fractional bits. This also works correctly for negative numbers.
+        const fractionalPartShifted = bd.bigint - (integerPart << divexBigInt);
         // Alternative line, around 10-20% slower:
-        // const decimalPartShifted = MathBigInt.getLeastSignificantBits(bd.bigint, divex_bigint)
-    
-        // Convert to a number
-    
-        let powerOf2ToUse: number = powersOfTwoList[bd.divex];
-    
-        // Is the decimal portion SO BIG that casting it to a Number
-        // would immediately make it Infinity? Accomodate for this scenario.
-        if (bd.divex > MAX_DIVEX_BEFORE_INFINITY) {
-    
-            powerOf2ToUse = powersOfTwoList[MAX_DIVEX_BEFORE_INFINITY];
-    
-            // How much should be right-shifted or truncated from the decimal part
-            // so that the resulting Number cast is below MAX_VALUE?
-            
-            // I only want to extract the most-significant 1023 bits of the decimal portion!
-            // All I need to do is right shift some more!
-            const remainingShiftNeeded: number = bd.divex - MAX_DIVEX_BEFORE_INFINITY;
-            decimalPartShifted >>= BigInt(remainingShiftNeeded);
+        // const fractionalPartShifted = bigintmath.getLeastSignificantBits(bd.bigint, divex_bigint)
+
+        // 3. Convert the integer part to a number. This can become Infinity if it's too large.
+        const numberResult = Number(integerPart);
+
+        // If the integer part is already +/- Infinity, the fractional part is irrelevant.
+        if (!Number.isFinite(numberResult)) return numberResult;
+        
+        // 4. Convert the fractional part to a number.
+        // We use a MAXIMUM precision (1023 bits) to avoid overflow during this cast.
+        const MAX_BITS_FOR_FRACTIONAL_CAST = MAX_DIVEX_BEFORE_INFINITY; // 1023
+        let decimalPartAsNumber: number;
+        let finalExponent: number = -bd.divex;
+
+        if (bd.divex <= MAX_BITS_FOR_FRACTIONAL_CAST) {
+            // The divex is small enough. A direct cast is safe, and won't become Infinite.
+            decimalPartAsNumber = Number(fractionalPartShifted);
+        } else {
+            // The divex is too large, casting the fractional part would result in Infinity.
+            // Truncate the LEAST significant bits of the
+            // fractional part before casting to avoid an overflow.
+            const shiftAmount = bd.divex - MAX_BITS_FOR_FRACTIONAL_CAST;
+            decimalPartAsNumber = Number(fractionalPartShifted >> BigInt(shiftAmount));
+            finalExponent += shiftAmount;
         }
-    
-        let decimal: number = Number(decimalPartShifted);
-    
-        // Simulate unshifting it by dividing by a power of 2
-        decimal = decimal / powerOf2ToUse;
-    
-        return number + decimal;
+
+        // 5. Scale the resulting number representation of the fractional part back down.
+        const decimalResult = decimalPartAsNumber * (2 ** finalExponent);
+
+        // 6. Return the final sum.
+        return numberResult + decimalResult;
     },
 
     /**
      * Converts a BigDecimal to a string. This returns its EXACT value!
-     * Using this string to construct a new BigDecimal will always result in a BigDecimal with the same value.
      * 
      * Note: Due to the nature of all binary fractions having power-of-2 denominators,
      * this string can make it appear as if they have more decimal digit precision than they actually do.
@@ -572,68 +609,34 @@ const MathBigDec = {
      * 9 digits of decimal precision, but in all effectiveness it only has 3 digits of precision,
      * because a single increment to 2/1024 now yields 0.001953125, which changed **every single** digit!
      * The effective decimal digits can be calculated using MathBigDec.getEffectiveDecimalPlaces().
-     * @param bd - The BigDecimal
-     * @returns The string with the exact value
+     * @param bd The BigDecimal to convert.
+     * @returns The string with the exact value.
      */
     toString(bd: BigDecimal): string {
         if (bd.bigint === ZERO) return '0';
-        const isNegative: boolean = bd.bigint < ZERO;
-    
-        const powerOfTenToMultiply: bigint = TEN ** BigInt(bd.divex);
-    
-        // This makes the number LARGE enough so that when we divide by a
-        // power of 2, there won't be any division overflow.
-        const largenedNumber: bigint = bd.bigint * powerOfTenToMultiply;
-    
-        const dividedNumber: bigint = largenedNumber >> BigInt(bd.divex);
-        let string: string = `${dividedNumber}`
-    
-        if (bd.divex === 0) return string; // Integer
-    
-        // Modify the string because it has a decimal value...
-    
-        // Make sure leading zeros aren't left out of the beginning
-        const integerPortion: bigint = bd.bigint >> BigInt(bd.divex);
-        if (integerPortion === ZERO || integerPortion === NEGONE) {
-            let missingZeros: number = bd.divex - string.length;
-            if (isNegative) missingZeros++;
-            if (missingZeros > 0) string = isNegative ? '-' + '0'.repeat(missingZeros) + string.slice(1)
-                                                      : '0'.repeat(missingZeros) + string;
-        }
-    
-        // Insert the decimal point at position 'divex' from the right side
-        string = insertDotAtIndexFromRight(string, bd.divex);
-        string = trimTrailingZeros(string);
-    
-        // If the integer portion is 0, apphend that to the start! For example, '.75' => '0.75'
-        it: if (integerPortion === ZERO || integerPortion === NEGONE) {
-            if (string.startsWith('-1')) break it; // One-off case that creates a bug if this isn't here. Happens when BigDecimal is -1 and divex is > 0.
-            if (string.startsWith('-')) string = '-0' + string.slice(1); // '-.75' => '-0.75'
-            else string = '0' + string; // '.75' => '0.75'
-        }
-    
-        // Remove the dot if there's nothing after it. For example, '1.' => '1'
-        if (string.endsWith('.')) string = string.slice(0, -1)
-        
-        return string;
+        if (bd.divex === 0) return bd.bigint.toString();
 
-        // Functions...
+        const isNegative = bd.bigint < ZERO;
+        // Use the absolute value for all calculations and add the sign back at the end.
+        const absBigInt = isNegative ? -bd.bigint : bd.bigint;
+        const divexBigInt = BigInt(bd.divex);
 
-        /** Inserts a `.` at the specified index from the right side of the string. */
-        function insertDotAtIndexFromRight(string: string, index: number): string {
-            const leftPart: string = string.slice(0, string.length - index);
-            const rightPart: string = string.slice(string.length - index);
-            return leftPart + '.' + rightPart
-        }
-        
-        /** Trims any '0's off the end of the provided string. */
-        function trimTrailingZeros(string: string): string {
-            let i: number = string.length - 1;
-            while (i >= 0 && string[i] === '0') {
-                i--;
-            }
-            return string.slice(0, i + 1);
-        }
+        // 1. Calculate all digits together by scaling with 10^divex.
+        const allDigits = (absBigInt * (TEN ** divexBigInt)) >> divexBigInt;
+
+        // 2. Pad the resulting string with leading zeros to ensure it's long enough
+        // to place the decimal point correctly. Adding 1 handles numbers < 1.
+        const fullString = allDigits.toString().padStart(bd.divex + 1, '0');
+
+        // 3. Insert the decimal point.
+        const dotIndex = fullString.length - bd.divex;
+        let result = fullString.slice(0, dotIndex) + '.' + fullString.slice(dotIndex);
+
+        // 4. Trim unnecessary trailing zeros from the fractional part.
+        result = result.replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
+
+        // 5. Add the negative sign if needed and return.
+        return isNegative ? '-' + result : result;
     },
 
     /**
