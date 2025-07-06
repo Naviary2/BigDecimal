@@ -650,29 +650,36 @@ function clone(bd: BigDecimal): BigDecimal {
 // Rounding & Truncating...
 
 /**
- * Rounds a given BigDecimal to the desired divex level.
- * If round is false, this truncates instead. But if the provided divex is higher than the existing divex, no truncating will occur.
- * @param bd - The BigDecimal
- * @param divex - The desired divex
- * @param round - Whether or not to round instead of truncating.
+ * Modifies the BigDecimal to have the specified divex, always rounding to the nearest value.
+ * This is consistent with the "round half up" method used elsewhere in the library.
+ * @param bd The BigDecimal to modify.
+ * @param divex The target divex.
  */
-function setExponent(bd: BigDecimal, divex: number, round: boolean = true): void {
-	if (divex < 0) throw new Error(`Cannot set divex of BigDecimal below 0! Received: ${divex}`);
-    // Throw an error if the provided divex is beyond `MAX_DIVEX`.
-    if (divex > MAX_DIVEX) throw new Error(`Cannot create a BigDecimal with divex ${divex}! Out of range. Max allowed: ${MAX_DIVEX}. If you need more range, please increase the MAX_DIVEX variable.`);
+function setExponent(bd: BigDecimal, divex: number): void {
+    if (divex < 0 || divex > MAX_DIVEX) throw new Error(`Divex must be between 0 and ${MAX_DIVEX}. Received: ${divex}`);
 
-	const difference: number = bd.divex - divex;
+    const difference = bd.divex - divex;
 
-	let roundUp: boolean = false;
-	if (round && difference > 0) { // Only round if we're shifting right.
-		// What is the bit's positition we need to round up if it's a '1'?
-		const bitPosition: number = difference;
-		roundUp = bigintmath.getBitAtPositionFromRight(bd.bigint, bitPosition) === 1
-	}
-	
-	bd.bigint >>= BigInt(difference);
-	if (roundUp) bd.bigint++;
-	bd.divex = divex;
+    // If there's no change, do nothing.
+    if (difference === 0) return;
+
+    // If the difference is negative, we are increasing precision (shifting left).
+    // This is a pure scaling operation and never requires rounding.
+    if (difference < 0) {
+        bd.bigint <<= BigInt(-difference);
+        bd.divex = divex;
+        return;
+    }
+
+    // We are now decreasing precision (shifting right), so we must round.
+
+    // To "round half up", we add 0.5 before truncating.
+    // "0.5" relative to the part being discarded is 1 bit shifted by (difference - 1).
+    const half = ONE << BigInt(difference - 1);
+    
+    bd.bigint += half;
+    bd.bigint >>= BigInt(difference);
+    bd.divex = divex;
 }
 
 // Comparisons...
