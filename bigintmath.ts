@@ -158,7 +158,7 @@ function getBitAtPositionFromRight(bigint: bigint, position: number): 1 | 0 {
  */
 function toDebugBinaryString(bigint: bigint): string {
     // 1. Handle the zero case cleanly.
-    if (bigint === 0n) return "0b0000_0000 (0n, 8-bit)";
+    if (bigint === 0n) return "0b0000_0000 (0n, 8-bit, 1-byte)";
 
     // 2. Calculate the minimum number of bits required for two's complement.
     let minBits: number;
