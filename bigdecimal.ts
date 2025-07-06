@@ -29,15 +29,6 @@
 /**
  * TODO:
  * 
- * - Javascript numbers DO have a bitshift operation (not sure what lead me to believe they don't),
- * so use that intead of multiplying by powers of 2.
- *
- * - If the priority is speed, then I should probably revert back to storing the 
- * BigDecimals as objects, instead of classes, because using the class 
- * constructor is about 20% slower.
- * I will just have to accept calling BigDecMath.multiply() and other operations
- * for performing arithmetic on BigDecimals.
- * 
  * - Decide how we want to handle the precision when you pass in a string for the BigDecimal.
  * For example, if 1.111222333444555666777888999 is passed in, should the precision be a set
  * 50 bits, or should the precision be 50 bits *more* than the minimum amount of bits to round
@@ -45,11 +36,10 @@
  * when the number gets smaller and smaller? It would eventually truncate to zero. Do we need a
  * way to dynamically increase the precision when the number gets smaller and smaller?
  * 
- * - toNumber() could be re-written to handle both the integer and decimal
- * parts together instead of separate.
- * 
  * - Finish writing all remaining arithmetic methods of MathBigDec!
  * 
+ * - Point of discussion: Should we store an exponent property instead of this
+ * new `divex` property, which is essentially the negative of the exponent?
  */
 
 
@@ -672,8 +662,12 @@ const MathBigDec = {
         return bigintmath.toDebugBinaryString(bd.bigint);
     },
 
-    clone(bd: BigDecimal): void {
-
+    /** Returns a deep copy of the original big decimal. */
+    clone(bd: BigDecimal): BigDecimal {
+        return {
+            bigint: bd.bigint,
+            divex: bd.divex,
+        }
     },
 
     // Rounding & Truncating...
