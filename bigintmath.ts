@@ -14,7 +14,7 @@
 const NEGONE: bigint = -1n;
 const ZERO: bigint = 0n;
 const ONE: bigint = 1n;
-const TWO: bigint = 2n;
+// const TWO: bigint = 2n;
 // const TEN: bigint = 10n;
 
 /**
@@ -40,17 +40,17 @@ function abs(bigint: bigint): bigint {
 //     return bigint.toString(2).length - 1;
 // }
 
-// /**
-// * Calculates the logarithm base 10 of the specified BigInt. Returns an integer.
-// * @param bigint - The BigInt. 0+
-// * @returns The logarithm to base 10
-// */
-// function log10(bigint: bigint): number {
-//     if (bigint === ZERO) return -Infinity; // Matches Math.log2(0)
-//     if (bigint < ZERO) return NaN;
+/**
+* Calculates the logarithm base 10 of the specified BigInt. Returns an integer.
+* @param bigint - The BigInt. 0+
+* @returns The logarithm to base 10
+*/
+function log10(bigint: bigint): number {
+    if (bigint === ZERO) return -Infinity; // Matches Math.log2(0)
+    if (bigint < ZERO) return NaN;
 
-//     return bigint.toString(10).length - 1;
-// }
+    return bigint.toString(10).length - 1;
+}
 
 // /**
 //  * Calculates the logarithm of the specified base of the BigInt. Returns an integer.
@@ -206,7 +206,7 @@ function toDebugBinaryString(bigint: bigint): string {
 export default {
     abs,
     // log2,
-    // log10,
+    log10,
     // logN,
     // getLeastSignificantBits,
     // getBitAtPositionFromRight,

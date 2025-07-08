@@ -1,80 +1,75 @@
 
+// bigdecimal.ts
+
 /**
- * bigdecimal.js v0.2.0 Beta
  * High performance arbitrary-precision decimal type of Javascript.
  * https://github.com/Naviary2/BigDecimal
- * Copyright (c) 2024 Naviary (www.InfiniteChess.org) <infinitechess.org@gmail.com>
- * MIT License
  * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Use Big Decimals when you not only need the arbitrary size of BigInts,
+ * but also decimals to go with them!
  * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * It is in base 2, so most base-10 numbers can't be represented perfectly.
  */
+
+
+import bigintmath from './bigintmath.js';
+
+
+// Types ========================================================
+
+
+/** 
+ * The main Big Decimal type. Capable of storing arbitrarily large numbers,
+ * with arbitrary levels of decimal precision!
+ */
+interface BigDecimal {
+	/**
+	 * The bigint storing the bits of the BigDecimal. Multiply this
+	 * by 2 ^(-divex) to get the true number being stored by the Big Decimal!
+	 */
+    bigint: bigint,
+	/**
+	 * The inverse exponent. Directly represents how many bits of the
+	 * bigint are utilized to store the decimal portion of the Big Decimal.
+	 */
+    divex: number,
+}
+
+
+// Constants ========================================================
+
+
+const LOG_TWO: number = Math.log(2);
+const ZERO: bigint = 0n;
+const ONE: bigint = 1n;
+const FIVE: bigint = 5n;
+
+
+// Config ===========================================================
 
 
 /**
- * TODO:
+ * The default additional number of bits used as working precision
+ * for all Big Decimals, on top of the minimum precision needed for
+ * the true value to round to the desired value.
  * 
- * - Decide how we want to handle the precision when you pass in a string for the BigDecimal.
- * For example, if 1.111222333444555666777888999 is passed in, should the precision be a set
- * 50 bits, or should the precision be 50 bits *more* than the minimum amount of bits to round
- * to that value? And if the precision is always constant, how would we handle repeated division
- * when the number gets smaller and smaller? It would eventually truncate to zero. Do we need a
- * way to dynamically increase the precision when the number gets smaller and smaller?
- * 
- * - Finish writing all remaining arithmetic methods of MathBigDec!
- * 
- * - Point of discussion: Should we store an exponent property instead of this
- * new `divex` property, which is essentially the negative of the exponent?
+ * The minimum number of bits used to store decimal bits in BigDecimals.
+ * Without working precision, small numbers parsed into BigDecimals would lose some precision.
+ * For example, 3.1 divex 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
+ * it means we'll very quickly lose a lot of accuracy when performing arithmetic!
+ * The user expects that, when they pass in 3.1, the resulting BigDecimal should be AS CLOSE to 3.1 as possible!!
+ * With a DEFAULT_WORKING_PRECISION of 50 bits, 3.1 divex 50 ==> 3.10000000000000142, which is A LOT closer to 3.1!
+ * I arbitrarily chose 50 bits for the minimum, because that gives us about 15 digits of precision,
+ * which is about how much javascript's doubles give us.
  */
-
-
-
-
-import bigintmath from './bigintmath';
-
-
-
-// Useful Number constants
-const LOG_TWO: number = Math.log(2);
-
-// Usefule BigInt constants
-const NEGONE: bigint = -1n;
-const ZERO: bigint = 0n;
-const ONE: bigint = 1n;
-// const TWO: bigint = 2n;
-const FIVE: bigint = 5n;
-const TEN: bigint = 10n;
-
-// The minimum number of bits used to store decimal bits in BigDecimals.
-// Without a minimum precision, small numbers parsed into BigDecimals would lose some precision.
-// For example, 3.1 divex 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
-// it means we'll very quickly lose a lot of accuracy when performing arithmetic!
-// The user expects that, when they pass in 3.1, the resulting BigDecimal should be AS CLOSE to 3.1 as possible!!
-// With a DEFAULT_PRECISION of 50 bits, 3.1 divex 50 ==> 3.10000000000000142, which is A LOT closer to 3.1!
-// I arbitrarily chose 50 bits for the minimum, because that gives us about 15 digits of precision,
-// which is about how much javascript's doubles give us.
-const DEFAULT_PRECISION: number = 50; // Default: 50
+const DEFAULT_WORKING_PRECISION: number = 50; // Default: 50
 
 /**
  * The maximum divex a BigDecimal is allowed to have.
  * Beyond this, the divex is assumed to be running away towards Infinity, so an error is thrown.
+ * Can be adjusted if you want more maximum precision.
  */
-const MAX_DIVEX: number = 1e5; // Default: 1e5 (100,000)
+const MAX_DIVEX: number = 1e3; // Default: 1e3 (1,000)
 
 /** A list of powers of 2, 1024 in length, starting at 1 and stopping before Number.MAX_VALUE. This goes up to 2^1023. */
 const powersOfTwoList: number[] = (() => {
@@ -87,11 +82,17 @@ const powersOfTwoList: number[] = (() => {
     return powersOfTwo;
 })();
 
-// Any divex greater than 1023 can lead to Number casts greater
-// than MAX_VALUE or equal to Infinity, because 1 * 2^1024 === Infinity,
-// but 1 * 2^1023 does NOT. And 1.0 encompasses all possible fractional values!
-// BigDecimals with divexs THAT big need special care!
+/**
+ * Any divex greater than 1023 can lead to Number casts (of the decimal portion)
+ * greater than Number.MAX_VALUE or equal to Infinity, because 1 * 2^1024 === Infinity,
+ * but 1 * 2^1023 does NOT. And 1.0 encompasses all possible fractional values!
+ * BigDecimals with divexs THAT big need special care!
+ */
 const MAX_DIVEX_BEFORE_INFINITY: number = powersOfTwoList.length - 1; // 1023
+
+
+// Helpers ====================================================================
+
 
 /**
  * Returns the specified bigint power of 2 when called.
@@ -126,112 +127,11 @@ const getBigintPowerOfTwo: (power: number) => bigint = (function() {
         if (power > powersOfTwo.length - 1) addMorePowers(power);
         return powersOfTwo[power];
     }
-})()
-
-// /**
-//  * DEPRICATED. Old constructor method.
-//  * 
-//  * Creates a BigDecimal that is equal to the provided number and has the specified divex level.
-//  * If the divex is not provided, DEFAULT_PRECISION is used, providing about 15 decimal places of precision.
-//  * 
-//  * @param {bigint | string | number} number - The true value of the BigDecimal
-//  * @param {number | undefined} [divex] - Optional. The desired divex, or precision for the BigDecimal. 0+, where 0 is integer-level precision. If left undefined, DEFAULT_PRECISION will be used.
-//  * @returns {BigDecimal} - The BigDecimal
-//  */
-// function BigDecimal(number, divex) {
-//     if (typeof number !== 'number' || Number.isInteger(number)) { // An integer was passed in...
-
-//         if (typeof number !== 'bigint') number = BigInt(number)
-//         if (divex == null) divex = 0; // Integer precision
-    
-//         number <<= BigInt(divex);
-
-//         return newBigDecimalFromProperties(number, divex);
-//     }
-
-//     // A number primitive with decimals was passed in...
-
-//     // Auto-sets the divex level if not specified
-//     divex = validateExponent(number, divex);
-
-//     // Separate the integer and decimal parts of the number
-//     const { integer, decimal } = getIntegerAndDecimalParts_FromNumber(number);
-
-//     // The number has to be bit-shifted according to the desired divex level
-//     number = BigInt(integer)
-//     number <<= BigInt(divex);
-
-//     // What is the decimal part bit shifted?...
-
-//     let powerOf2ToUse = powersOfTwoList[divex];
-
-//     // Is the divex SO LARGE that bit shifting the Number before casting
-//     // to a BigInt would make it Infinity? Accomodate for this scenario.
-//     let extraToShiftLeft = 0;
-//     if (divex > MAX_DIVEX_BEFORE_INFINITY) {
-//         powerOf2ToUse = powersOfTwoList[MAX_DIVEX_BEFORE_INFINITY];
-//         extraToShiftLeft = divex - MAX_DIVEX_BEFORE_INFINITY;
-//     }
-
-//     // Javascript doubles don't have a native bit shift operation
-//     // Because of this, we multiply by powers of 2 to simulate bit shifting!
-//     const shiftedDecimal = decimal * powerOf2ToUse; // Same as decimal * 2**divex
-    
-//     const roundedDecimal = Math.round(shiftedDecimal)
-//     let decimalPart = BigInt(roundedDecimal);
-
-//     if (extraToShiftLeft > 0) decimalPart <<= BigInt(extraToShiftLeft);
-
-//     // Finally, add the decimal part to the number
-//     number += decimalPart;
-
-//     return newBigDecimalFromProperties(number, divex);
-// }
-
-// /**
-//  * DEPRICATED. Used by old BigDecimal constructor.
-//  * 
-//  * Use this BigDecimal constructor when you already know the `number` and `divex` properties of the BigDecimal.
-//  * @param {bigint} number - The `number` property
-//  * @param {number} divex - The `divex` property
-//  */
-// function newBigDecimalFromProperties(number, divex) {
-//     watchExponent(divex); // Protects the divex from running away to Infinity.
-//     return { number, divex }
-// }
-
-// /**
-//  * DEPRICATED. Used by the old BigDecimal constructor.
-//  * 
-//  * Separates the number into its integer and decimal components.
-//  * This can be used during the process of converting it to a BigInt or BigDecimal
-//  * @param {number} number - The number
-//  * @returns {object} An object with 2 properties, `integer` and `decimal`.
-//  */
-// function getIntegerAndDecimalParts_FromNumber(number) {
-//     let integerPart = Math.trunc(number);
-//     let decimalPart = number - integerPart;
-//     return { integer: integerPart, decimal: decimalPart }
-// }
-
-interface BigDecimal {
-    bigint: bigint,
-    divex: number,
-}
+})();
 
 
-/**
- * Creates a Big Decimal from a javascript number (double)
- * @param num 
- * @param [precision]
- */
-function NewBigDecimal_FromNumber(num: number, precision: number = DEFAULT_PRECISION): BigDecimal {
-    if (!isFinite(num)) throw new Error(`Cannot create a BigDecimal from a non-finite number. Received: ${num}`);
-    if (precision < 0 || precision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
+// Big Decimal Contructor =============================================================
 
-    const fullDecimalString = toFullDecimalString(num);
-    return NewBigDecimal_FromString(fullDecimalString, precision);
-}
 
 /**
  * Creates a Big Decimal from a string (arbitrarily long)
@@ -239,10 +139,10 @@ function NewBigDecimal_FromNumber(num: number, precision: number = DEFAULT_PRECI
  * The final precision is calculated dynamically to preserve the input string's
  * precision, plus a "working precision" for future calculations.
  * @param num The string to convert.
- * @param [workingPrecision=DEFAULT_PRECISION] The amount of extra precision to add.
+ * @param [workingPrecision=DEFAULT_WORKING_PRECISION] The amount of extra precision to add.
  * @returns A new BigDecimal with the value from the string.
  */
-function NewBigDecimal_FromString(num: string, workingPrecision: number = DEFAULT_PRECISION): BigDecimal {
+function NewBigDecimal_FromString(num: string, workingPrecision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
     if (workingPrecision < 0 || workingPrecision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${workingPrecision}`);
 
     const dotIndex: number = num.lastIndexOf('.');
@@ -255,7 +155,7 @@ function NewBigDecimal_FromString(num: string, workingPrecision: number = DEFAUL
     //    This ensures we always have enough precision for the input, plus a buffer for future math.
     const divex: number = minBitsForInput + workingPrecision;
     // Check if the calculated divex is within our library's limits.
-    if (divex > MAX_DIVEX) throw new Error(`Precision after applying working precision exceeded ${MAX_DIVEX}. Please use a smaller input number or working precision.`);
+    if (divex > MAX_DIVEX) throw new Error(`Precision after applying working precision exceeded ${MAX_DIVEX}. Please use an input number with fewer decimal places or specify less working precision.`);
 
     // 1. Calculate 5^N.
     const powerOfFive: bigint = FIVE ** BigInt(decimalDigitCount);
@@ -280,11 +180,26 @@ function NewBigDecimal_FromString(num: string, workingPrecision: number = DEFAUL
 }
 
 /**
+ * Creates a Big Decimal from a javascript number (double)
+ * @param num - The number to convert.
+ * @param [workingPrecision=DEFAULT_WORKING_PRECISION] The amount of extra precision to add.
+ * @returns A new BigDecimal with the value from the number.
+ */
+function NewBigDecimal_FromNumber(num: number, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
+    if (!isFinite(num)) throw new Error(`Cannot create a BigDecimal from a non-finite number. Received: ${num}`);
+    if (precision < 0 || precision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
+
+    const fullDecimalString = toFullDecimalString(num);
+    return NewBigDecimal_FromString(fullDecimalString, precision);
+}
+
+/**
  * Creates a Big Decimal from a bigint and a desired precision level.
  * @param num
- * @param [precision]
+ * @param [workingPrecision=DEFAULT_WORKING_PRECISION] The amount of extra precision to add.
+ * @returns A new BigDecimal with the value from the bigint.
  */
-function NewBigDecimal_FromBigInt(num: bigint, precision: number = DEFAULT_PRECISION): BigDecimal {
+function NewBigDecimal_FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
     if (precision < 0 || precision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
     return {
         bigint: num << BigInt(precision),
@@ -293,11 +208,12 @@ function NewBigDecimal_FromBigInt(num: bigint, precision: number = DEFAULT_PRECI
 }
 
 
+// Helpers ===========================================================================================
+
 
 /**
  * Converts a finite number to a string in full decimal notation, avoiding scientific notation.
  * This method is reliable for all finite numbers, correctly handling all edge cases.
- *
  * @param num The number to convert.
  * @returns The number in decimal format as a string.
  * @throws {Error} If the input is not a finite number (e.g., Infinity, -Infinity, or NaN).
@@ -341,9 +257,30 @@ function toFullDecimalString(num: number): string {
 	}
 }
 
+/**
+ * Returns the mimimum number of bits you need to get the specified digits of precision, rounding up.
+ * 1 decimal digit of precision ≈ 3.32 binary bits of precision.
+ * 
+ * For example, to have 3 decimal places of precision in a BigDecimal, or precision to the nearest thousandth,
+ * call this function with precision `3`, and it will return `10` to use for the divex value of your BigDecimal, because 2^10 ≈ 1000
+ * 
+ * HOWEVER, it is recommended to add some constant amount of extra precision to retain accuracy!
+ * 3.1 divex 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
+ * performing our arithmetic with 3.125 will quickly divexiate inaccuracies!
+ * If we added 30 extra bits of precision, then our 4 bits of precision
+ * becomes 34 bits. 3.1 divex 34 ==> 3.099999999976717... which is a LOT closer to 3.1!
+ * @param precision - The number of decimal places of precision you would like
+ * @returns The minimum number of bits needed to obtain that precision, rounded up.
+ */
+function howManyBitsForDigitsOfPrecision(precision: number): number {
+	const powerOfTen: number = 10**precision; // 3 ==> 1000
+	// 2^x = powerOfTen. Solve for x
+	const x: number = Math.log(powerOfTen) / LOG_TWO;
+	return Math.ceil(x)
+}
 
 
-/** Math and arithmetic methods performed on BigDecimals */
+// Math and Arithmetic Methods ==================================================================
 
 /**
  * Adds two BigDecimal numbers.
@@ -413,8 +350,6 @@ function subtract(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 	}
 }
 
-// Multiplication...
-
 /**
  * Multiplies two BigDecimal numbers.
  * @param bd1 - Factor1
@@ -447,14 +382,12 @@ function multiply(bd1: BigDecimal, bd2: BigDecimal, mode: 0 | 1 | 2 = 0): BigDec
  * This prevents the divex from growing uncontrollably with repeated divisions.
  * @param bd1 - The dividend.
  * @param bd2 - The divisor.
- * @param [workingPrecision=DEFAULT_PRECISION] - Extra bits for internal calculation to prevent rounding errors.
+ * @param [workingPrecision=DEFAULT_WORKING_PRECISION] - Extra bits for internal calculation to prevent rounding errors.
  * @returns The quotient of bd1 and bd2 (bd1 / bd2).
  * @throws {Error} If attempting to divide by zero.
  */
-function divide(bd1: BigDecimal, bd2: BigDecimal, workingPrecision: number = DEFAULT_PRECISION): BigDecimal {
-	if (bd2.bigint === ZERO) {
-		throw new Error("Division by zero is not allowed.");
-	}
+function divide(bd1: BigDecimal, bd2: BigDecimal, workingPrecision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
+	if (bd2.bigint === ZERO) throw new Error("Division by zero is not allowed.");
 
 	// 1. Determine the predictable, final divex for the result.
 	const targetDivex = Math.max(bd1.divex, bd2.divex);
@@ -482,8 +415,6 @@ function divide(bd1: BigDecimal, bd2: BigDecimal, workingPrecision: number = DEF
 	};
 }
 
-// Other...
-
 /**
  * Returns a new BigDecimal that is the absolute value of the provided BigDecimal.
  * @param bd - The BigDecimal.
@@ -499,7 +430,78 @@ function abs(bd: BigDecimal): BigDecimal {
 	};
 }
 
-// Castings...
+/** Returns a deep copy of the original big decimal. */
+function clone(bd: BigDecimal): BigDecimal {
+	return {
+		bigint: bd.bigint,
+		divex: bd.divex,
+	};
+}
+
+/**
+ * Modifies the BigDecimal to have the specified divex, always rounding to the nearest value.
+ * This is consistent with the "round half up" method used elsewhere in the library.
+ * @param bd The BigDecimal to modify.
+ * @param divex The target divex.
+ */
+function setExponent(bd: BigDecimal, divex: number): void {
+    if (divex < 0 || divex > MAX_DIVEX) throw new Error(`Divex must be between 0 and ${MAX_DIVEX}. Received: ${divex}`);
+
+    const difference = bd.divex - divex;
+
+    // If there's no change, do nothing.
+    if (difference === 0) return;
+
+    // If the difference is negative, we are increasing precision (shifting left).
+    // This is a pure scaling operation and never requires rounding.
+    if (difference < 0) {
+        bd.bigint <<= BigInt(-difference);
+        bd.divex = divex;
+        return;
+    }
+
+    // We are now decreasing precision (shifting right), so we must round.
+
+    // To "round half up", we add 0.5 before truncating.
+    // "0.5" relative to the part being discarded is 1 bit shifted by (difference - 1).
+    const half = ONE << BigInt(difference - 1);
+    
+    bd.bigint += half;
+    bd.bigint >>= BigInt(difference);
+    bd.divex = divex;
+}
+
+/**
+ * Compares two BigDecimals.
+ * @param bd1 The first BigDecimal.
+ * @param bd2 The second BigDecimal.
+ * @returns -1 if bd1 < bd2, 0 if bd1 === bd2, and 1 if bd1 > bd2.
+ */
+function compare(bd1: BigDecimal, bd2: BigDecimal): -1 | 0 | 1 {
+    // To compare, we must bring them to a common divex, just like in add/subtract.
+    // However, we don't need to create new objects.
+
+    let bigint1 = bd1.bigint;
+    let bigint2 = bd2.bigint;
+
+    if (bd1.divex > bd2.divex) {
+        // Scale up bd2 to match bd1's divex.
+        bigint2 <<= BigInt(bd1.divex - bd2.divex);
+    } else if (bd2.divex > bd1.divex) {
+        // Scale up bd1 to match bd2's divex.
+        bigint1 <<= BigInt(bd2.divex - bd1.divex);
+    }
+    // If divex are equal, no scaling is needed.
+
+    // Now that they are at the same scale, we can directly compare the bigints.
+    if (bigint1 < bigint2) return -1;
+    if (bigint1 > bigint2) return 1;
+    return 0;
+}
+
+
+// Conversions & Utility ====================================================================
+
 
 /**
  * Converts a BigDecimal to a BigInt, always rounding to the nearest integer.
@@ -582,7 +584,7 @@ function toNumber(bd: BigDecimal): number {
  * For example, 1/1024 = 0.0009765625, which at first glance *looks* like it has
  * 9 digits of decimal precision, but in all effectiveness it only has 3 digits of precision,
  * because a single increment to 2/1024 now yields 0.001953125, which changed **every single** digit!
- * The effective decimal digits can be calculated using MathBigDec.getEffectiveDecimalPlaces().
+ * The effective decimal digits can be calculated using {@link getEffectiveDecimalPlaces}.
  * @param bd The BigDecimal to convert.
  * @returns The string with the exact value.
  */
@@ -639,78 +641,37 @@ function toDebugBinaryString(bd: BigDecimal): string {
 	return bigintmath.toDebugBinaryString(bd.bigint);
 }
 
-/** Returns a deep copy of the original big decimal. */
-function clone(bd: BigDecimal): BigDecimal {
-	return {
-		bigint: bd.bigint,
-		divex: bd.divex,
-	};
+/**
+ * Prints useful information about the BigDecimal, such as its properties,
+ * binary string, exact value as a string, and converted back to a number.
+ * @param bd - The BigDecimal
+ */
+function printInfo(bd: BigDecimal): void {
+	console.log(bd)
+	console.log(`Binary string: ${toDebugBinaryString(bd)}`);
+	// console.log(`Bit length: ${MathBigDec.getBitLength(bd)}`)
+	console.log(`Converted to String: ${toString(bd)}`); // This is also its EXACT value.
+	console.log(`Converted to Number: ${toNumber(bd)}`);
+	console.log('----------------------------')
 }
-
-// Rounding & Truncating...
 
 /**
- * Modifies the BigDecimal to have the specified divex, always rounding to the nearest value.
- * This is consistent with the "round half up" method used elsewhere in the library.
- * @param bd The BigDecimal to modify.
- * @param divex The target divex.
+ * Estimates the number of effective decimal place precision of a BigDecimal.
+ * This is a little less than one-third of the divex, or the decimal bit-count precision.
+ * @param bd - The BigDecimal
+ * @returns The number of estimated effective decimal places.
  */
-function setExponent(bd: BigDecimal, divex: number): void {
-    if (divex < 0 || divex > MAX_DIVEX) throw new Error(`Divex must be between 0 and ${MAX_DIVEX}. Received: ${divex}`);
-
-    const difference = bd.divex - divex;
-
-    // If there's no change, do nothing.
-    if (difference === 0) return;
-
-    // If the difference is negative, we are increasing precision (shifting left).
-    // This is a pure scaling operation and never requires rounding.
-    if (difference < 0) {
-        bd.bigint <<= BigInt(-difference);
-        bd.divex = divex;
-        return;
-    }
-
-    // We are now decreasing precision (shifting right), so we must round.
-
-    // To "round half up", we add 0.5 before truncating.
-    // "0.5" relative to the part being discarded is 1 bit shifted by (difference - 1).
-    const half = ONE << BigInt(difference - 1);
-    
-    bd.bigint += half;
-    bd.bigint >>= BigInt(difference);
-    bd.divex = divex;
+function getEffectiveDecimalPlaces(bd: BigDecimal): number {
+	if (bd.divex <= MAX_DIVEX_BEFORE_INFINITY) {
+		const powerOfTwo: number = powersOfTwoList[bd.divex];
+		const precision: number = Math.log10(powerOfTwo);
+		return Math.floor(precision);
+	} else {
+		const powerOfTwo: bigint = getBigintPowerOfTwo(bd.divex)
+		return bigintmath.log10(powerOfTwo);
+	}
 }
 
-// Comparisons...
-
-/**
- * Compares two BigDecimals.
- * @param bd1 The first BigDecimal.
- * @param bd2 The second BigDecimal.
- * @returns -1 if bd1 < bd2, 0 if bd1 === bd2, and 1 if bd1 > bd2.
- */
-function compare(bd1: BigDecimal, bd2: BigDecimal): -1 | 0 | 1 {
-    // To compare, we must bring them to a common divex, just like in add/subtract.
-    // However, we don't need to create new objects.
-
-    let bigint1 = bd1.bigint;
-    let bigint2 = bd2.bigint;
-
-    if (bd1.divex > bd2.divex) {
-        // Scale up bd2 to match bd1's divex.
-        bigint2 <<= BigInt(bd1.divex - bd2.divex);
-    } else if (bd2.divex > bd1.divex) {
-        // Scale up bd1 to match bd2's divex.
-        bigint1 <<= BigInt(bd2.divex - bd1.divex);
-    }
-    // If divex are equal, no scaling is needed.
-
-    // Now that they are at the same scale, we can directly compare the bigints.
-    if (bigint1 < bigint2) return -1;
-    if (bigint1 > bigint2) return 1;
-    return 0;
-}
 
 // HOLD OFF ON THESE FOR NOW, I'M NOT SURE IF WE WILL NEED THEM...
 
@@ -750,90 +711,39 @@ function compare(bd1: BigDecimal, bd2: BigDecimal): -1 | 0 | 1 {
 // },
 
 
-// Miscellanious...
+// Exports ====================================================================
 
-/**
- * Returns the mimimum number of bits you need to get the specified digits of precision, rounding up.
- * 
- * For example, to have 3 decimal places of precision in a BigDecimal, or precision to the nearest thousandth,
- * call this function with precision `3`, and it will return `10` to use for the divex value of your BigDecimal, because 2^10 ≈ 1000
- * 
- * HOWEVER, it is recommended to add some constant amount of extra precision to retain accuracy!
- * 3.1 divex 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
- * performing our arithmetic with 3.125 will quickly divexiate inaccuracies!
- * If we added 30 extra bits of precision, then our 4 bits of precision
- * becomes 34 bits. 3.1 divex 34 ==> 3.099999999976717... which is a LOT closer to 3.1!
- * @param precision - The number of decimal places of precision you would like
- * @returns The minimum number of bits needed to obtain that precision, rounded up.
- */
-function howManyBitsForDigitsOfPrecision(precision: number): number {
-	const powerOfTen: number = 10**precision; // 3 ==> 1000
-	// 2^x = powerOfTen. Solve for x
-	const x: number = Math.log(powerOfTen) / LOG_TWO;
-	return Math.ceil(x)
-}
-
-/**
- * Estimates the number of effective decimal place precision of a BigDecimal.
- * This is a little less than one-third of the divex, or the decimal bit-count precision.
- * @param bd - The BigDecimal
- * @returns The number of estimated effective decimal places.
- */
-function getEffectiveDecimalPlaces(bd: BigDecimal): number {
-	if (bd.divex <= MAX_DIVEX_BEFORE_INFINITY) {
-		const powerOfTwo: number = powersOfTwoList[bd.divex];
-		const precision: number = Math.log10(powerOfTwo);
-		return Math.floor(precision);
-	} else {
-		const powerOfTwo: bigint = getBigintPowerOfTwo(bd.divex)
-		return bigintmath.log10(powerOfTwo);
-	}
-}
-
-/**
- * Prints useful information about the BigDecimal, such as its properties,
- * binary string, exact value as a string, and converted back to a number.
- * @param bd - The BigDecimal
- */
-function printInfo(bd: BigDecimal): void {
-	console.log(bd)
-	console.log(`Binary string: ${toDebugBinaryString(bd)}`);
-	// console.log(`Bit length: ${MathBigDec.getBitLength(bd)}`)
-	console.log(`Converted to String: ${toString(bd)}`); // This is also its EXACT value.
-	console.log(`Converted to Number: ${toNumber(bd)}`);
-	console.log('----------------------------')
-}
 
 export default {
+	NewBigDecimal_FromString,
+	NewBigDecimal_FromNumber,
+	NewBigDecimal_FromBigInt,
+	// Helpers
+	howManyBitsForDigitsOfPrecision,
+	getEffectiveDecimalPlaces,
+	// Math and Arithmetic
 	add,
 	subtract,
 	multiply,
 	divide,
 	abs,
+	clone,
+	setExponent,
+	compare,
+	// Conversions and Utility
 	toBigInt,
 	toNumber,
 	toString,
 	toDebugBinaryString,
-	clone,
-	setExponent,
-
-    compare,
-
-	howManyBitsForDigitsOfPrecision,
-	getEffectiveDecimalPlaces,
-	printInfo
+	printInfo,
 };
 
 
 
-
-
-
-
-
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 // Testing
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+
 
 
 const n1: string = '1.11223344';
@@ -894,7 +804,7 @@ printInfo(bd1)
 //     console.timeEnd('BigDecimal')
 //     console.log(`BigDecimal product: ${MathBigDec.toString(product)}`)
 //     console.log(`Bits of precision used: ${product.divex}`)
-//     console.log(`Approximate digits of precision used: ${MathBigDec.getEffectiveDecimalPlaces(product)}`)
+//     console.log(`Approximate digits of precision used: ${getEffectiveDecimalPlaces(product)}`)
 //     console.log('')
     
     
