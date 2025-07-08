@@ -7,15 +7,18 @@
  */
 
 
-// Useful Number constants
-// const LOG_TWO: number = Math.log(2);
+// Constants =========================================================
 
-// Usefule BigInt constants
+
+// const LOG_TWO: number = Math.log(2);
 const NEGONE: bigint = -1n;
 const ZERO: bigint = 0n;
 const ONE: bigint = 1n;
 // const TWO: bigint = 2n;
-// const TEN: bigint = 10n;
+
+
+// Mathematical Operations ===========================================
+
 
 /**
  * Calculates the absolute value of a bigint
@@ -202,6 +205,10 @@ function toDebugBinaryString(bigint: bigint): string {
     // return `${formattedString.padEnd(10 + displayBits + Math.floor(displayBits/4))}${annotation}`;
     return `${formattedString} ${annotation}`;
 }
+
+
+// Exports ============================================================
+
 
 export default {
     abs,
