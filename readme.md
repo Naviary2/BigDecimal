@@ -1,6 +1,8 @@
 # Arbitrary Decimal Precision Arithmetic
 
-**This library is not yet finished.**
+GO HERE FOR THE FINISHED IMPLEMENTATION:
+https://github.com/Infinite-Chess/infinitechess.org/blob/main/src/client/scripts/esm/util/bigdecimal/bigdecimal.ts
+This library is no longer being updated here.
 
 This is a library for working with numbers of arbitrary precision that focuses on speed, while having compatibility not only for integers, but decimals as well.
 
