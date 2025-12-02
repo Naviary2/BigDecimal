@@ -66,7 +66,7 @@ function runComprehensiveVerification(): void {
 	}
 
 	// Helper for primitives
-	function testPrimitive(name: string, result: unknown): void {
+	function testPrimitive(name: string, result: string | number | boolean): void {
 		console.log(`\n▶ TEST: ${name}`);
 		console.log(`  Result: ${result}`);
 		console.log('----------------------------');
@@ -138,7 +138,8 @@ function runComprehensiveVerification(): void {
 
 	console.log('\n--- Comprehensive Interaction Verification Finished ---');
 
-	// Suppress unused function warnings
+	// These helper functions are used by the commented Part 2 tests above.
+	// Keeping references to avoid unused function warnings when Part 2 is re-enabled.
 	void testAndPrint;
 	void testPrimitive;
 }
