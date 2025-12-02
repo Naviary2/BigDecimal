@@ -73,14 +73,12 @@ const MAX_DIVEX_BEFORE_INFINITY: number = powersOfTwoList.length - 1; // 1023
 // Constants ========================================================
 
 const LOG10_OF_2: number = Math.log10(2); // ≈ 0.30103
+const LN2 = FromNumber(Math.LN2); // Natural log of 2 ~ 0.69314
 
 const ZERO: bigint = 0n;
 const ONE: bigint = 1n;
 const FIVE: bigint = 5n;
 const TEN: bigint = 10n;
-
-const E: BigDecimal = FromNumber(Math.E);
-const LN2 = FromNumber(Math.LN2); // Natural log of 2
 
 // Big Decimal Contructor =============================================================
 
@@ -646,10 +644,10 @@ function clone(bd: BigDecimal): BigDecimal {
 }
 
 /**
- * Modifies the BigDecimal to have the specified divex, always rounding half up.
- * Mutating.
+ * Modifies the BigDecimal to have the specified decimal precision, always rounding half up.
+ * Mutating, modifies the original BigDecimal.
  * @param bd The BigDecimal to modify.
- * @param divex The target divex.
+ * @param divex The target precision in bits.
  */
 function setExponent(bd: BigDecimal, divex: number): void {
 	if (divex < -MAX_DIVEX || divex > MAX_DIVEX)
@@ -725,7 +723,11 @@ function isZero(bd: BigDecimal): boolean {
 
 /**
  * Returns whether a bigdecimal has the default [FIXED] amount of precision.
- * If not, it's likely been affected by floating point operations.
+ * This is to help you catch when you accidentally use operations that change
+ * the precision model from the default fixed-point, when your variable in
+ * question should always remain with fixed precision.
+ * @param bd The BigDecimal to check.
+ * @returns True if the BigDecimal has the default working precision.
  */
 function hasDefaultPrecision(bd: BigDecimal): boolean {
 	return bd.divex === DEFAULT_WORKING_PRECISION;
@@ -1163,15 +1165,8 @@ function getEffectiveDecimalPlaces(bd: BigDecimal): number {
 // Exports ====================================================================
 
 export default {
-	E,
-
-	// NewBigDecimal_FromString,
 	FromNumber,
-	// FromNumber_floating,
 	FromBigInt,
-	// Helpers
-	howManyBitsForDigitsOfPrecision,
-	getEffectiveDecimalPlaces,
 	// Math and Arithmetic
 	add,
 	subtract,
@@ -1208,8 +1203,6 @@ export default {
 	toNumber,
 	toExactString,
 	toApproximateString,
-	toDebugBinaryString,
-	printInfo,
 };
 
 export type { BigDecimal };
