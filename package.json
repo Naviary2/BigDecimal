@@ -7,7 +7,7 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tsx src/test.ts"
   },
   "repository": {
     "type": "git",
@@ -43,6 +43,7 @@
     "@typescript-eslint/parser": "^8.48.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.3"
   }
 }
