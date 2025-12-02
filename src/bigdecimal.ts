@@ -55,7 +55,7 @@
 
 
 
-import bigintmath from './bigintmath';
+import bimath from './bimath';
 
 
 
@@ -511,7 +511,7 @@ const MathBigDec = {
         // To round in binary is easy. If the first digit (or most-significant digit)
         // of the decimal portion is a 1, we round up! If it's 0, we round down.
 
-        const bitAtPosition: 1 | 0 = bigintmath.getBitAtPositionFromRight(bd.bigint, bd.divex)
+        const bitAtPosition: 1 | 0 = bimath.getBitAtPositionFromRight(bd.bigint, bd.divex)
         if (bitAtPosition === 1) integerPart++;
         return integerPart;
     },
@@ -646,7 +646,7 @@ const MathBigDec = {
      * @returns The binary string. If it is negative, the leading `1` sign will have a space after it for readability.
      */
     toDebugBinaryString(bd: BigDecimal): string {
-        return bigintmath.toDebugBinaryString(bd.bigint);
+        return bimath.toDebugBinaryString(bd.bigint);
     },
 
     clone(bd: BigDecimal): void {
@@ -671,7 +671,7 @@ const MathBigDec = {
         if (round && difference > 0) { // Only round if we're shifting right.
             // What is the bit's positition we need to round up if it's a '1'?
             const bitPosition: number = difference;
-            roundUp = bigintmath.getBitAtPositionFromRight(bd.bigint, bitPosition) === 1
+            roundUp = bimath.getBitAtPositionFromRight(bd.bigint, bitPosition) === 1
         }
         
         bd.bigint >>= BigInt(difference);
@@ -804,7 +804,7 @@ const MathBigDec = {
             return Math.floor(precision);
         } else {
             const powerOfTwo: bigint = getBigintPowerOfTwo(bd.divex)
-            return bigintmath.log10(powerOfTwo);
+            return bimath.log10(powerOfTwo);
         }
     },
 

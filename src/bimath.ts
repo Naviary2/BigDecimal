@@ -1,5 +1,5 @@
 
-// bigintmath.ts
+// bimath.ts
 
 /**
  * This module contains complex math functions
