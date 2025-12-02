@@ -4,5 +4,5 @@ node_modules
 .vscode
 # Build output
 dist
-# Generated JS files in src (use dist instead)
+# Generated JS files in src (safe guard)
 src/*.js
