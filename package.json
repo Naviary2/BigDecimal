@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/Naviary2/BigDecimal#readme",
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "typescript": "^5.9.3"
   }
 }
