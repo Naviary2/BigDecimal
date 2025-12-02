@@ -33,6 +33,11 @@
   "homepage": "https://github.com/Naviary2/BigDecimal#readme",
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
+    "@eslint/js": "^9.39.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
     "typescript": "^5.9.3"
   }
 }
