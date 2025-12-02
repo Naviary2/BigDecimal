@@ -1,42 +1,8 @@
 // src/bigdecimal.ts
 
-/**
- * High performance arbitrary-precision decimal type of Javascript.
- * https://github.com/Naviary2/BigDecimal
- *
- * Use Big Decimals when you not only need the arbitrary size of BigInts,
- * but also decimals to go with them!
- *
- * It is in base 2, so most base-10 numbers can't be represented perfectly.
- *
- * ================ HOW IT WORKS ================
- *
- * Javascript's BigInt primitive is one of the fastest methods for performing
- * arbitrary integer arithmetic in javascript. This library takes advantage of
- * BigInt's speed, and combines it with fixed-point arithmetic. A set portion
- * of the least-significant bits of the BigInt are dedicated towards the decimal
- * portion of the number, indicated by the divex property, and the remaining
- * most-significant bits are used for the integer portion!
- *
- * The value of a BigDecimal is always `bigint / (2^divex)`.
- *
- * If we wanted to store 2.75, that would look like { bigint: 11n, divex: 2}.
- * In binary, 11n is 1011. But the right-most 2 bits are dedicated for the decimal
- * part, so we split it into 10, which is 2 in binary, and 11, which is a binary
- * fraction for 0.75. Added together we get 2.75.
- *
- * This allows us to work with arbitrary-sized numbers with arbitrary levels of decimal precision!
- */
-
 import bimath from './bimath.js';
 
 // Types ========================================================
-
-/**
- * A length-2 array of coordinates: `[x,y]`
- * Contains infinite precision integers, represented as BigInt.
- */
-type Coords = [bigint, bigint];
 
 /**
  * The main Big Decimal type. Capable of storing arbitrarily large numbers,
@@ -118,59 +84,6 @@ const LN2 = FromNumber(Math.LN2); // Natural log of 2
 
 // Big Decimal Contructor =============================================================
 
-// COMMENTED-OUT since it's unused in the code.
-// /**
-//  * Creates a Big Decimal from a string (arbitrarily long)
-//  * "1905000302050000000000000000000000000000000000.567"
-//  * The final precision is calculated dynamically to preserve the input string's
-//  * precision, plus a "working precision" for future calculations.
-//  * @param num The string to convert.
-//  * @param [workingPrecision=DEFAULT_WORKING_PRECISION] The amount of extra precision to add.
-//  * @returns A new BigDecimal with the value from the string.
-//  */
-// function NewBigDecimal_FromString(num: string, workingPrecision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
-// 	if (workingPrecision < 0 || workingPrecision > MAX_DIVEX) throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${workingPrecision}`);
-
-// 	// 1. Validate and deconstruct the string using regex.
-// 	const match = num.trim().match(/^(-?)(\d*)?\.?(\d*)$/);
-// 	if (!match) throw new Error("Invalid number format");
-// 	const sign = match[1] || '';
-// 	const intPart = match[2] || '0';
-// 	const fracPart = match[3] || '';
-
-// 	const decimalDigitCount = fracPart.length;
-
-// 	// Combine parts into a single integer string (e.g., "-1.23" -> "-123")
-// 	const numAsIntegerString = sign + intPart + fracPart;
-// 	let numberAsBigInt = BigInt(numAsIntegerString);
-
-// 	// 2. Calculate the minimum bits needed to represent the input string's fractional part.
-// 	const minBitsForInput: number = howManyBitsForDigitsOfPrecision(decimalDigitCount);
-
-// 	// 3. The final divex is this minimum, plus the requested "working precision".
-// 	//    This ensures we always have enough precision for the input, plus a buffer for future math.
-// 	const divex: number = minBitsForInput + workingPrecision;
-// 	// Check if the calculated divex is within our library's limits.
-// 	if (divex > MAX_DIVEX) throw new Error(`Precision after applying working precision exceeded ${MAX_DIVEX}. Please use an input number with fewer decimal places or specify less working precision.`);
-
-// 	// 4. Calculate 5^N.
-// 	const powerOfFive: bigint = FIVE ** BigInt(decimalDigitCount);
-
-// 	const shiftAmount = BigInt(divex - decimalDigitCount);
-// 	if (shiftAmount > 0) numberAsBigInt <<= shiftAmount;
-// 	else if (shiftAmount < 0) numberAsBigInt >>= -shiftAmount; // A negative shift is a right shift.
-
-// 	// 5. Finally, perform the division by the power of 5, with rounding.
-// 	//    We add half the divisor before dividing to implement "round half up".
-// 	const halfDivisor = powerOfFive / 2n;
-// 	const bigint: bigint = (numberAsBigInt + halfDivisor) / powerOfFive;
-
-// 	return {
-// 		bigint,
-// 		divex,
-// 	};
-// }
-
 /**
  * Creates a Big Decimal from a javascript number (double) by directly
  * interpreting its IEEE 754 binary representation extremely fast.
@@ -199,31 +112,6 @@ function FromNumber(num: number, precision: number = DEFAULT_WORKING_PRECISION):
 
 	return rawBD;
 }
-
-// /**
-//  * Creates a "floating-point" style Big Decimal from a javascript number (double).
-//  * This method preserves the significant digits of the input number by normalizing
-//  * the result to a specified mantissa bit length, automatically calculating the
-//  * required divex. This is ideal for representing very large or very small numbers
-//  * without them being underflowed to zero.
-//  * @param num - The number to convert.
-//  * @param [mantissaBits=DEFAULT_MANTISSA_PRECISION_BITS] The target number of bits for the mantissa.
-//  * @returns A new, normalized BigDecimal with the value from the number.
-//  */
-// function FromNumber_floating(num: number, mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS): BigDecimal {
-// 	if (mantissaBits <= 0 || mantissaBits > MAX_DIVEX) throw new Error(`Mantissa bits must be between 1 and ${MAX_DIVEX}. Received: ${mantissaBits}`);
-// 	if (!isFinite(num)) throw new Error(`Cannot create a BigDecimal from a non-finite number. Received: ${num}`);
-
-// 	// Handle the zero case.
-// 	if (num === 0) return { bigint: ZERO, divex: mantissaBits };
-
-// 	// Get the raw, unadjusted BigDecimal representation.
-// 	// We know rawBD is not null here because we've handled the zero case.
-// 	const rawBD = _fromNumberBits(num)!;
-
-// 	// Normalize the raw BigDecimal to the target mantissa size.
-// 	return normalize(rawBD, mantissaBits);
-// }
 
 /**
  * Internal helper to parse the raw IEEE 754 bits of a JavaScript number
@@ -286,52 +174,6 @@ function FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PRECISION):
 }
 
 // Helpers ===========================================================================================
-
-// UNUSED NOW since the constructor from number no longer intermediately converts to a string?
-// /**
-//  * Converts a finite number to a string in full decimal notation, avoiding scientific notation.
-//  * This method is reliable for all finite numbers, correctly handling all edge cases.
-//  * @param num The number to convert.
-//  * @returns The number in decimal format as a string.
-//  */
-// function toFullDecimalString(num: number): string {
-// 	// 1. Input Validation: Fail fast for non-finite numbers.
-// 	if (!isFinite(num)) throw new Error(`Cannot decimal-stringify a non-finite number. Received: ${num}`);
-
-// 	// 2. Optimization: Handle numbers that don't need conversion.
-// 	const numStr: string = String(num);
-// 	if (!numStr.includes('e')) return numStr;
-
-// 	// 3. Deconstruct the scientific notation string.
-// 	const [base, exponentStr] = numStr.split('e') as [string, string];
-// 	const exponent: number = Number(exponentStr);
-// 	const sign: string = base[0] === '-' ? '-' : '';
-// 	const absBase: string = base.replace('-', '');
-// 	const [intPart, fracPart = ''] = absBase.split('.') as [string, string];
-
-// 	// 4. Reconstruct the string based on the exponent.
-// 	if (exponent > 0) { // For large numbers
-// 		if (exponent >= fracPart.length) {
-// 			// Case A: The decimal point moves past all fractional digits.
-// 			// e.g., 1.23e5 -> 123000
-// 			const allDigits = intPart + fracPart;
-// 			const zerosToPad = exponent - fracPart.length;
-// 			return sign + allDigits + '0'.repeat(zerosToPad);
-// 		} else {
-// 			// Case B: The decimal point lands within the fractional digits.
-// 			// e.g., 1.2345e2 -> 123.45
-// 			const decimalIndex = intPart.length + exponent;
-// 			const allDigits = intPart + fracPart;
-// 			const left = allDigits.slice(0, decimalIndex);
-// 			const right = allDigits.slice(decimalIndex);
-// 			return sign + left + '.' + right;
-// 		}
-// 	} else { // For small numbers (exponent < 0)
-// 		const numLeadingZeros = -exponent - 1;
-// 		const allDigits = intPart + fracPart;
-// 		return sign + '0.' + '0'.repeat(numLeadingZeros) + allDigits;
-// 	}
-// }
 
 /**
  * Returns the mimimum number of bits you need to get the specified digits of precision, rounding up.
@@ -1152,10 +994,9 @@ function toBigInt(bd: BigDecimal): bigint {
 }
 
 /**
- * Most efficient method to convert a BigDecimal to a number.
- * Only use if you are CONFIDENT the BigDecimal's mantissa (bigint property)
- * will not overflow or underflow the standard javascript number
- * type, AND you are sure the divex is <= 1023!! Otherwise, use {@link toExactNumber}.
+ * Convert a BigDecimal to a javascript number.
+ * Will overflow to Infinity if the mantissa of the BigDecimal is too large,
+ * or underflow to 0 if the precision is too high.
  * @param bd - The BigDecimal to convert.
  * @returns The value as a standard javascript number.
  */
@@ -1163,70 +1004,17 @@ function toNumber(bd: BigDecimal): number {
 	if (bd.divex >= 0) {
 		if (bd.divex > MAX_DIVEX_BEFORE_INFINITY) return 0; // Exponent is so high that the resulting number cast to that power of two will be close to zero.
 		const mantissaAsNumber = Number(bd.bigint);
-		// I think we should allow the cast to become Infinity?
-		// if (!isFinite(mantissaAsNumber)) throw new Error("Cannot convert BigDecimal to number when the bigint/mantissa is over Number.MAX_VALUE!");
+		if (!isFinite(mantissaAsNumber)) return mantissaAsNumber; // Already Infinity or -Infinity
 		return mantissaAsNumber / powersOfTwoList[bd.divex]!;
 	} else {
 		// divex is negative
 		const exp = -bd.divex;
 		const mantissaAsNumber = Number(bd.bigint);
-		// I think we should allow the cast to become Infinity?
 		if (!isFinite(mantissaAsNumber)) return mantissaAsNumber; // Already Infinity or -Infinity
 		if (exp > MAX_DIVEX_BEFORE_INFINITY) return mantissaAsNumber >= 0 ? Infinity : -Infinity; // Exponent is so high that the resulting number cast to that power of two will be infinite.
 		return mantissaAsNumber * powersOfTwoList[exp]!;
 	}
 }
-
-// COMMENTED-OUT as it's unused in the code
-// /**
-//  * Converts a BigDecimal to a number (javascript double).
-//  * This conversion is lossy if the BigDecimal's precision exceeds that of a 64-bit float.
-//  * If the value exceeds Number.MAX_VALUE, it will correctly return Infinity or -Infinity.
-//  * @param bd - The BigDecimal to convert.
-//  * @returns The value as a standard javascript number.
-//  */
-// function toExactNumber(bd: BigDecimal): number {
-// 	const divexBigInt = BigInt(bd.divex);
-
-// 	// 1. Separate the integer part without losing any precision yet.
-// 	// A negative divexBigInt correctly results in a left shift.
-// 	const integerPart = bd.bigint >> divexBigInt;
-
-// 	// 2. Isolate the fractional bits. This also works correctly for negative numbers.
-// 	const fractionalPartShifted = bd.bigint - (integerPart << divexBigInt);
-// 	// Alternative line, around 10-20% slower:
-// 	// const fractionalPartShifted = bimath.getLeastSignificantBits(bd.bigint, divex_bigint)
-
-// 	// 3. Convert the integer part to a number. This can become Infinity if it's too large.
-// 	const numberResult = Number(integerPart);
-
-// 	// If the integer part is already +/- Infinity, the fractional part is irrelevant.
-// 	if (!isFinite(numberResult)) return numberResult;
-
-// 	// 4. Convert the fractional part to a number.
-// 	// We use a MAXIMUM precision (1023 bits) to avoid overflow during this cast.
-// 	const MAX_BITS_FOR_FRACTIONAL_CAST = MAX_DIVEX_BEFORE_INFINITY; // 1023
-// 	let decimalPartAsNumber: number;
-// 	let finalExponent: number = -bd.divex;
-
-// 	if (bd.divex <= MAX_BITS_FOR_FRACTIONAL_CAST) {
-// 		// The divex is small enough. A direct cast is safe, and won't become Infinite.
-// 		decimalPartAsNumber = Number(fractionalPartShifted);
-// 	} else {
-// 		// The divex is too large, casting the fractional part would result in Infinity.
-// 		// Truncate the LEAST significant bits of the
-// 		// fractional part before casting to avoid an overflow.
-// 		const shiftAmount = bd.divex - MAX_BITS_FOR_FRACTIONAL_CAST;
-// 		decimalPartAsNumber = Number(fractionalPartShifted >> BigInt(shiftAmount));
-// 		finalExponent += shiftAmount;
-// 	}
-
-// 	// 5. Scale the resulting number representation of the fractional part back down.
-// 	const decimalResult = decimalPartAsNumber * (2 ** finalExponent);
-
-// 	// 6. Return the final sum.
-// 	return numberResult + decimalResult;
-// }
 
 /**
  * Converts a BigDecimal to a string. This returns its EXACT value!
@@ -1237,8 +1025,6 @@ function toNumber(bd: BigDecimal): number {
  * 9 digits of decimal precision, but in all effectiveness it only has 3 digits of precision,
  * because a single increment to 2/1024 now yields 0.001953125, which changed **every single** digit!
  * The effective decimal digits can be calculated using {@link getEffectiveDecimalPlaces}.
- * @param bd The BigDecimal to convert.
- * @returns The string with the exact value.
  */
 function toExactString(bd: BigDecimal): string {
 	if (bd.bigint === ZERO) return '0';
@@ -1282,14 +1068,10 @@ function toExactString(bd: BigDecimal): string {
 }
 
 /**
- * Converts a BigDecimal to a human-readable string, rounded to its
- * "effective" number of decimal places. This trims extraneous digits that
- * arise from the binary-to-decimal conversion, providing a cleaner output.
- * For the exact stored value, use {@link toExactString}.
- * @param bd The BigDecimal to convert.
- * @returns The effectively rounded number as a string.
+ * Converts a BigDecimal to a string, rounded to its "effective" number of decimal places.
+ * This trims extraneous digits that give a false sense of precision.
  */
-function toString(bd: BigDecimal): string {
+function toApproximateString(bd: BigDecimal): string {
 	// 1. Handle the zero case simply.
 	if (bd.bigint === ZERO) return '0';
 
@@ -1360,7 +1142,7 @@ function printInfo(bd: BigDecimal): void {
 	console.log(`Binary string: ${toDebugBinaryString(bd)}`);
 	// console.log(`Bit length: ${MathBigDec.getBitLength(bd)}`)
 	console.log(`Converted to Exact String: ${toExactString(bd)}`); // This is also its EXACT value.
-	console.log(`Converted to String: ${toString(bd)}`);
+	console.log(`Converted to String: ${toApproximateString(bd)}`);
 	// console.log(`Converted to Exact Number: ${toExactNumber(bd)}`);
 	console.log(`Converted to Number: ${toNumber(bd)}`);
 	console.log(`Converted to BigInt: ${toBigInt(bd)}`);
@@ -1425,7 +1207,7 @@ export default {
 	// toExactNumber,
 	toNumber,
 	toExactString,
-	toString,
+	toApproximateString,
 	toDebugBinaryString,
 	printInfo,
 };
