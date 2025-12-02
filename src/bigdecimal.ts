@@ -39,16 +39,6 @@ import bimath from './bimath.js';
 type Coords = [bigint, bigint];
 
 /**
- * A pair of arbitrarily large coordinates WITH decimal precision included.
- * Typically used for calculating graphics on the cpu-side.
- * BD = BigDecimal
- */
-type BDCoords = [BigDecimal, BigDecimal];
-
-/** For when we don't need arbitrary size. */
-type DoubleCoords = [number, number];
-
-/**
  * The main Big Decimal type. Capable of storing arbitrarily large numbers,
  * with arbitrary levels of decimal precision!
  */
@@ -293,28 +283,6 @@ function FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PRECISION):
 		bigint: num << BigInt(precision),
 		divex: precision,
 	};
-}
-
-/**
- * Converts Coords to BDCoords (BigDecimal), capable of decimal arithmetic.
- * @param coords
- * @param [precision=DEFAULT_WORKING_PRECISION] The amount of extra precision to add.
- * @returns New BDCoords with the values from the coords.
- */
-function FromCoords(coords: Coords, precision: number = DEFAULT_WORKING_PRECISION): BDCoords {
-	if (precision < 0 || precision > MAX_DIVEX)
-		throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
-	return [FromBigInt(coords[0], precision), FromBigInt(coords[1], precision)];
-}
-
-/** Converts coordinates of javascript doubles to BDCoords (BigDecimal) */
-function FromDoubleCoords(
-	coords: DoubleCoords,
-	precision: number = DEFAULT_WORKING_PRECISION,
-): BDCoords {
-	if (precision < 0 || precision > MAX_DIVEX)
-		throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
-	return [FromNumber(coords[0], precision), FromNumber(coords[1], precision)];
 }
 
 // Helpers ===========================================================================================
@@ -1036,16 +1004,6 @@ function isInteger(bd: BigDecimal): boolean {
 	return bd.bigint % scale === ZERO;
 }
 
-/**
- * Checks if both coordinates in a BDCoords tuple represent perfect integers.
- * This is useful for determining if a point lies exactly on an integer grid.
- * @param coords The BDCoords tuple [x, y] to check.
- * @returns True if both the x and y coordinates are whole numbers.
- */
-function areCoordsIntegers(coords: BDCoords): boolean {
-	return isInteger(coords[0]) && isInteger(coords[1]);
-}
-
 /** Calculates the base-10 logarithm of a BigDecimal. */
 function log10(bd: BigDecimal): number {
 	// Use the change of base formula: log10(x) = ln(x) / ln(10).
@@ -1191,25 +1149,6 @@ function toBigInt(bd: BigDecimal): bigint {
 	const adjustedBigInt = bd.bigint + half;
 
 	return adjustedBigInt >> divexBigInt;
-}
-
-/**
- * Converts a pair of bigdecimal coords into normal bigint Coords.
- * THIS WILL LOSE PRECISION if you aren't already confident that both
- * coordinates are integers!
- */
-function coordsToBigInt(coords: BDCoords): Coords {
-	// Convert each coordinate to a BigInt using the toBigInt function.
-	return [toBigInt(coords[0]), toBigInt(coords[1])];
-}
-
-/**
- * Converts a pair of bigdecimal coords into DoubleCoords.
- * Only call if you are CONFIDENT all both coordinates won't overflow or underflow!
- */
-function coordsToDoubles(coords: BDCoords): DoubleCoords {
-	// Convert each coordinate to a BigInt using the toBigInt function.
-	return [toNumber(coords[0]), toNumber(coords[1])];
 }
 
 /**
@@ -1448,8 +1387,6 @@ export default {
 	FromNumber,
 	// FromNumber_floating,
 	FromBigInt,
-	FromCoords,
-	FromDoubleCoords,
 	// Helpers
 	howManyBitsForDigitsOfPrecision,
 	getEffectiveDecimalPlaces,
@@ -1480,14 +1417,11 @@ export default {
 	floor,
 	ceil,
 	isInteger,
-	areCoordsIntegers,
 	log10,
 	ln,
 	exp,
 	// Conversions and Utility
 	toBigInt,
-	coordsToBigInt,
-	coordsToDoubles,
 	// toExactNumber,
 	toNumber,
 	toExactString,
