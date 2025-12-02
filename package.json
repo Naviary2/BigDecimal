@@ -1,8 +1,10 @@
 {
-  "name": "@naviary/bigdecimal",
+  "name": "@ic/bigdecimal",
   "version": "1.0.0",
   "description": "High-performance arbitrary-precision decimal arithmetic for JavaScript.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -19,11 +21,14 @@
     "float",
     "floating-point",
     "fixed-point",
-    "naviary",
-    "precision",
+	"precision",
     "optimized",
     "high-performance",
-    "performance"
+    "performance",
+    "naviary",
+	"infinite-chess",
+	"infinitechess",
+    "ic"
   ],
   "author": "Naviary",
   "license": "MIT",

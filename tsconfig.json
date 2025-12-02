@@ -2,6 +2,12 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "strict": true
-  }
+    "strict": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
 }

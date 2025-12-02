@@ -2,3 +2,7 @@
 node_modules
 # VSCode automatically generated directory
 .vscode
+# Build output
+dist
+# Generated JS files in src (safe guard)
+src/*.js
