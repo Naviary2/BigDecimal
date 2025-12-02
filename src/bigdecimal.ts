@@ -1,4 +1,4 @@
-// src/client/scripts/esm/util/bigdecimal/bigdecimal.ts
+// src/bigdecimal.ts
 
 /**
  * High performance arbitrary-precision decimal type of Javascript.
