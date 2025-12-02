@@ -867,7 +867,7 @@ function ln(bd: BigDecimal): number {
 }
 
 /**
- * Calculates the exponential function e^bd (the inverse of the natural logarithm).
+ * [Floating-Point Model] Calculates the exponential function e^bd (the inverse of the natural logarithm).
  * This is computed using argument reduction and a Taylor Series expansion for arbitrary precision.
  * @param bd The BigDecimal exponent.
  * @param mantissaBits The precision of the result in bits.
