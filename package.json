@@ -1,5 +1,5 @@
 {
-  "name": "@ic/bigdecimal",
+  "name": "@naviary/bigdecimal",
   "version": "1.0.0",
   "description": "High-performance arbitrary-precision decimal arithmetic for JavaScript.",
   "main": "dist/index.js",
