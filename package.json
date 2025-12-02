@@ -1,0 +1,37 @@
+{
+  "name": "@naviary/bigdecimal",
+  "version": "1.0.0",
+  "description": "High-performance arbitrary-precision decimal arithmetic for JavaScript.",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Naviary2/BigDecimal.git"
+  },
+  "keywords": [
+    "bigint",
+    "bigdecimal",
+    "binary",
+    "arbitrary-precision",
+    "float",
+    "floating-point",
+    "fixed-point",
+    "naviary",
+    "precision",
+    "optimized",
+    "high-performance",
+    "performance"
+  ],
+  "author": "Naviary",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Naviary2/BigDecimal/issues"
+  },
+  "homepage": "https://github.com/Naviary2/BigDecimal#readme",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
