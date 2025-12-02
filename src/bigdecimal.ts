@@ -333,7 +333,11 @@ export function multiply_fixed(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
  * @param mantissaBits - How many bits of mantissa to use for the result, while still guaranteeing arbitrary integer precision. This only affects really small decimals. If not provided, the default will be used.
  * @returns The product of bd1 and bd2.
  */
-export function multiply_floating(bd1: BigDecimal, bd2: BigDecimal, mantissaBits?: number): BigDecimal {
+export function multiply_floating(
+	bd1: BigDecimal,
+	bd2: BigDecimal,
+	mantissaBits?: number,
+): BigDecimal {
 	// 1. Calculate the raw product of the internal bigints.
 	const newBigInt = bd1.bigint * bd2.bigint;
 
@@ -547,7 +551,10 @@ export function pow(
  * [Floating-Point Model] Calculates the square root of a BigDecimal using Newton's method.
  * The precision of the result is determined by the `mantissaBits` parameter.
  */
-export function sqrt(bd: BigDecimal, mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS): BigDecimal {
+export function sqrt(
+	bd: BigDecimal,
+	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
+): BigDecimal {
 	// 1. Validate input
 	if (bd.bigint < ZERO) throw new Error('Cannot calculate the square root of a negative number.');
 	if (bd.bigint === ZERO) return { bigint: ZERO, divex: bd.divex };
@@ -872,7 +879,10 @@ export function ln(bd: BigDecimal): number {
  * @param mantissaBits The precision of the result in bits.
  * @returns A new BigDecimal representing e^bd.
  */
-export function exp(bd: BigDecimal, mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS): BigDecimal {
+export function exp(
+	bd: BigDecimal,
+	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
+): BigDecimal {
 	// --- 1. Argument Reduction ---
 	// We use the identity: e^x = e^(y + k*ln(2)) = (e^y) * 2^k
 	// First, find k = round(bd / ln(2))
