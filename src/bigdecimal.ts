@@ -1380,7 +1380,9 @@ function toString(bd: BigDecimal): string {
 
 	// 6. Combine and return the final string.
 	if (trimmedFractionalPart.length === 0)
-		return sign + integerPart; // If the entire fractional part was zeros, don't show the decimal point.
+		return (
+			sign + integerPart
+		); // If the entire fractional part was zeros, don't show the decimal point.
 	else return sign + integerPart + '.' + trimmedFractionalPart;
 }
 

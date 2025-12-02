@@ -267,7 +267,9 @@ function toDebugBinaryString(bigint: bigint): string {
 	}
 
 	// 7. Add a helpful annotation with chunk count, bytes, and bits.
-	const annotation = `(${chunkCount}-chunk, ${chunkCount * CHUNK_BYTES} bytes, ${displayBits} bits)`;
+	const annotation = `(${chunkCount}-chunk, ${
+		chunkCount * CHUNK_BYTES
+	} bytes, ${displayBits} bits)`;
 
 	return `${formattedString} ${annotation}`;
 }
