@@ -32,7 +32,7 @@ console.log(`\nSqrt ${n1}:`);
 printInfo(bd3);
 
 const power2 = 3;
-const bd4 = powerInt(bd1, 3);
+const bd4 = powerInt(bd1, power2);
 console.log(`\nPower ${n1} by ${power2}:`);
 printInfo(bd4);
 
