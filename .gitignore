@@ -1,1 +1,4 @@
+# Visual Studio automatically generated directories
+node_modules
+# VSCode automatically generated directory
 .vscode
