@@ -79,13 +79,6 @@ const ONE: bigint = 1n;
 const FIVE: bigint = 5n;
 const TEN: bigint = 10n;
 
-// Lazy-initialized constant for natural log of 2
-let _LN2: BigDecimal | undefined;
-function getLN2(): BigDecimal {
-	if (!_LN2) _LN2 = FromNumber(Math.LN2);
-	return _LN2;
-}
-
 // Big Decimal Contructor =============================================================
 
 /**
@@ -883,7 +876,7 @@ export function exp(bd: BigDecimal, mantissaBits: number = DEFAULT_MANTISSA_PREC
 	// --- 1. Argument Reduction ---
 	// We use the identity: e^x = e^(y + k*ln(2)) = (e^y) * 2^k
 	// First, find k = round(bd / ln(2))
-	const LN2 = getLN2();
+	const LN2 = FromNumber(Math.LN2);
 	const bd_div_ln2 = divide_floating(bd, LN2, mantissaBits);
 	const k = toBigInt(bd_div_ln2);
 
