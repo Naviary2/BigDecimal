@@ -1379,10 +1379,8 @@ function toString(bd: BigDecimal): string {
 	const sign = roundedScaledInt < ZERO ? '-' : '';
 
 	// 6. Combine and return the final string.
-	if (trimmedFractionalPart.length === 0)
-		return (
-			sign + integerPart
-		); // If the entire fractional part was zeros, don't show the decimal point.
+	// If the entire fractional part was zeros, don't show the decimal point.
+	if (trimmedFractionalPart.length === 0) return sign + integerPart;
 	else return sign + integerPart + '.' + trimmedFractionalPart;
 }
 
