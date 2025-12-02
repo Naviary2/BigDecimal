@@ -2,7 +2,9 @@
   "name": "@naviary/bigdecimal",
   "version": "1.0.0",
   "description": "High-performance arbitrary-precision decimal arithmetic for JavaScript.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
