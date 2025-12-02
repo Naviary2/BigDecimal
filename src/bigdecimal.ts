@@ -30,9 +30,23 @@
 
 import bimath from './bimath.js';
 
-import type { BDCoords, Coords, DoubleCoords } from '../../chess/util/coordutil.js';
-
 // Types ========================================================
+
+/**
+ * A length-2 array of coordinates: `[x,y]`
+ * Contains infinite precision integers, represented as BigInt.
+ */
+type Coords = [bigint, bigint];
+
+/**
+ * A pair of arbitrarily large coordinates WITH decimal precision included.
+ * Typically used for calculating graphics on the cpu-side.
+ * BD = BigDecimal
+ */
+type BDCoords = [BigDecimal, BigDecimal];
+
+/** For when we don't need arbitrary size. */
+type DoubleCoords = [number, number];
 
 /**
  * The main Big Decimal type. Capable of storing arbitrarily large numbers,
