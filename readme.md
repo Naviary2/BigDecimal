@@ -76,11 +76,14 @@ All methods do not modify the input arguments, returning a new BigDecimal, unles
 | `negate(x)` | Returns the value with its sign inverted. |
 | **Comparison** | |
 | `compare(a, b)` | Returns `-1` if a < b, `0` if equal, `1` if a > b. |
-| `areEqual(a, b)` | Returns `true` if values are numerically equal (precision doesn't matter). |
+| `areEqual(a, b)` | Returns `true` if values are numerically equal. |
 | `isInteger(x)` | Returns `true` if the value has no fractional part. |
 | `isZero(x)` | Returns `true` if the value is zero. |
 | **Conversion** | |
+| `clone` | Returns a duplicate of the BigDecimal. |
+| `setExponent` | Modifies the given BigDecimal with a new precision level. |
+| `fixPrecision` | Resets the precision of the BigDecimal to the default. |
 | `toExactString(x)` | Returns the full, precise decimal string. |
 | `toApproximateString(x)` | Returns a rounded decimal string to trim extraneous digits that only give an illusion of precision. |
 | `toNumber(x)` | Converts to a standard JavaScript number (may overflow/underflow or lose precision). |
-| `toBigInt(x)` | Truncates the decimal part and returns the integer as a BigInt. |
+| `toBigInt(x)` | Rounds any decimal part and returns a BigInt. |
