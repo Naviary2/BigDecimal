@@ -53,12 +53,10 @@ import BD, {
 	toApproximateString,
 	type BigDecimal,
 } from '../src/bigdecimal.ts';
+import bimath from '../src/bimath.ts';
 
-// Helper function to calculate bit length of a bigint
-function bitLength(bn: bigint): number {
-	const v = bn < 0n ? -bn : bn;
-	return v === 0n ? 0 : v.toString(2).length;
-}
+// Use optimized bitLength from bimath
+const bitLength = bimath.bitLength_bisection;
 
 // ============================================================================
 // A. Integer arithmetic correctness (perfect integer results)
@@ -620,6 +618,36 @@ describe('G. Additional useful tests', () => {
 
 			expect(result.divex).toBe(a.divex);
 			expect(toBigInt(result)).toBe(2n);
+		});
+
+		it('mod with fractional divisor', () => {
+			// 5.0 mod 1.5 = 0.5 (5 = 3*1.5 + 0.5)
+			const a: BigDecimal = FromBigInt(5n, 10);
+			const b: BigDecimal = { bigint: 3n, divex: 1 }; // 1.5
+			const result = mod(a, b);
+
+			expect(result.divex).toBe(a.divex);
+			expect(toNumber(result)).toBeCloseTo(0.5, 5);
+		});
+
+		it('mod with both operands fractional', () => {
+			// 2.75 mod 0.5 = 0.25 (2.75 = 5*0.5 + 0.25)
+			const a: BigDecimal = { bigint: 11n, divex: 2 }; // 2.75
+			const b: BigDecimal = { bigint: 1n, divex: 1 }; // 0.5
+			const result = mod(a, b);
+
+			expect(result.divex).toBe(a.divex);
+			expect(toExactString(result)).toBe('0.25');
+		});
+
+		it('mod with fractional dividend and integer divisor', () => {
+			// 7.5 mod 2 = 1.5 (7.5 = 3*2 + 1.5)
+			const a: BigDecimal = { bigint: 15n, divex: 1 }; // 7.5
+			const b: BigDecimal = FromBigInt(2n, 10);
+			const result = mod(a, b);
+
+			expect(result.divex).toBe(a.divex);
+			expect(toNumber(result)).toBeCloseTo(1.5, 5);
 		});
 	});
 
