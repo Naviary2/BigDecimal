@@ -51,18 +51,13 @@ import BD, {
 	toNumber,
 	toExactString,
 	toApproximateString,
+	type BigDecimal,
 } from '../src/bigdecimal.ts';
 
 // Helper function to calculate bit length of a bigint
 function bitLength(bn: bigint): number {
 	const v = bn < 0n ? -bn : bn;
 	return v === 0n ? 0 : v.toString(2).length;
-}
-
-// Type alias for BigDecimal literal creation
-interface BigDecimal {
-	bigint: bigint;
-	divex: number;
 }
 
 // ============================================================================
