@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   lint-format:
-    name: Lint / Format
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
