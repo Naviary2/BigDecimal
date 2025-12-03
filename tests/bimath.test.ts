@@ -189,8 +189,8 @@ describe('B. toDebugBinaryString', () => {
 		});
 	});
 
-	describe('negative integers (two\'s complement)', () => {
-		it('formats -1n correctly (all ones in two\'s complement)', () => {
+	describe("negative integers (two's complement)", () => {
+		it("formats -1n correctly (all ones in two's complement)", () => {
 			const result = bimath.toDebugBinaryString(-1n);
 			expect(result).toContain('0b');
 			// -1 in two's complement is all 1s
