@@ -62,8 +62,8 @@ All methods do not modify the input arguments, returning a new BigDecimal, unles
 | `FromNumber(n)`           | Creates a BigDecimal from a JavaScript number.                                                                                          |
 | `FromBigInt(n)`           | Creates a BigDecimal from a native BigInt.                                                                                              |
 | **Arithmetic**            |                                                                                                                                         |
-| `add(a, b)`               | Adds two BigDecimals.                                                                                                                   |
-| `subtract(a, b)`          | Subtracts `b` from `a`.                                                                                                                 |
+| `add(a, b)`               | Adds two BigDecimals, maintaining the precision of the first argument.                                                                                                                   |
+| `subtract(a, b)`          | Subtracts `b` from `a`, maintaining the precision of `a`.                                                                                                                 |
 | `multiply_fixed(a, b)`    | Multiplies maintaining precision of the first argument.                                                                                 |
 | `multiply_floating(a, b)` | Multiplies and normalizes the precision to a standard mantissa size (handles scale changes nicely).                                     |
 | `divide_fixed(a, b)`      | Divides `a` by `b` maintaining precision of the first argument.                                                                         |
