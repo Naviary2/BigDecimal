@@ -40,7 +40,7 @@ interface BigDecimal {
 let DEFAULT_WORKING_PRECISION = 23;
 
 /** The target number of bits for the mantissa in floating-point operations. Higher is more precise but slower. */
-const DEFAULT_MANTISSA_PRECISION_BITS = DEFAULT_WORKING_PRECISION; // Gives us about 7, or 16 digits of precision, depending whether we have 32 bit or 64 bit precision (javascript doubles are 64 bit).
+let DEFAULT_MANTISSA_PRECISION_BITS = DEFAULT_WORKING_PRECISION; // Gives us about 7, or 16 digits of precision, depending whether we have 32 bit or 64 bit precision (javascript doubles are 64 bit).
 
 /** A list of powers of 2, 1024 in length, starting at 1 and stopping before Number.MAX_VALUE. This goes up to 2^1023. */
 const powersOfTwoList: number[] = (() => {
@@ -81,6 +81,7 @@ function SetGlobalPrecision(precision: number): void {
 		throw new Error(`Precision must be greater than zero. Received: ${precision}`);
 
 	DEFAULT_WORKING_PRECISION = precision;
+	DEFAULT_MANTISSA_PRECISION_BITS = DEFAULT_WORKING_PRECISION;
 }
 
 // Constructors =============================================================
