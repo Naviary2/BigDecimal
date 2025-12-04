@@ -2,6 +2,7 @@
   "name": "@naviary/bigdecimal",
   "version": "1.0.0",
   "description": "High-performance arbitrary-precision decimal arithmetic for JavaScript.",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -13,7 +14,8 @@
     "test:watch": "vitest --watch",
     "lint": "eslint src tests",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bench": "tsx benchmarks/index.ts"
   },
   "repository": {
     "type": "git",
@@ -48,10 +50,13 @@
     "@eslint/js": "^9.39.1",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
+    "bignumber.js": "^9.3.1",
+    "decimal.js": "^10.6.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
+    "mitata": "^1.0.34",
     "prettier": "^3.7.3",
-    "tsx": "^4.19.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.3"
   }
