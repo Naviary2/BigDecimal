@@ -1,6 +1,6 @@
 # High Performance Arbitrary Decimal Precision
 
-Binary BigDecimal implementation focusing on performance. This reaches performance 15x to 60x faster on various operations than mainstream libraries [decimal.js](https://www.npmjs.com/package/decimal.js/v/10.2.1), and [bignumber.js](https://www.npmjs.com/package/bignumber.js) (benchmarks below).
+Binary BigDecimal implementation focusing on performance. This reaches speeds 15x to 60x faster on various operations than mainstream libraries [decimal.js](https://www.npmjs.com/package/decimal.js/v/10.2.1), and [bignumber.js](https://www.npmjs.com/package/bignumber.js) (benchmarks below).
 
 This library was designed by [Naviary](https://www.youtube.com/@Naviary) to fill a missing gap in software requirements. A demonstration of its capabilities can be seen in this video, [The Journey to the Edge of the Infinite Chess Board](https://youtu.be/AaBkZzy2t0Y?si=b5lc2QYaHoF28cnW). This has been tested for numbers as large as 10^1000000, but theoretically it should work for as long as the bigint max size isn't exceeded, which is 4.20e323228496 in the V8 JavaScript engine.
 
