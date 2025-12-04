@@ -605,9 +605,10 @@ export function sqrt(
 }
 
 /**
- * [Floating-Point Model] Calculates the hypotenuse of two BigDecimals (sqrt(a^2 + b^2)).
- * This is equivalent to the length of the vector (bd1, bd2).
- * The precision of the result is determined by the `mantissaBits` parameter.
+ * [Floating-Point Model] Calculates the hypotenuse of a right triangle, given the lengths of the two other sides.
+ * @param bd1 - The length of one side.
+ * @param bd2 - The length of the other side.
+ * @param mantissaBits - The precision of the result in bits.
  */
 export function hypot(
 	bd1: BigDecimal,
@@ -759,6 +760,13 @@ export function max(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 /** Returns a BigDecimal that is clamped between the specified minimum and maximum values. */
 export function clamp(bd: BigDecimal, min: BigDecimal, max: BigDecimal): BigDecimal {
 	return compare(bd, min) < 0 ? min : compare(bd, max) > 0 ? max : bd;
+}
+
+/** Rounds a BigDecimal to the nearest integer, rounding half up. */
+export function round(bd: BigDecimal): BigDecimal {
+	const bigintRounded = toBigInt(bd);
+	// Create a new BigDecimal with the rounded bigint and the same divex as the input.
+	return FromBigInt(bigintRounded, bd.divex);
 }
 
 /**

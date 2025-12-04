@@ -43,6 +43,7 @@ import BD, {
 	clamp,
 	floor,
 	ceil,
+	round,
 	isInteger,
 	ln,
 	log10,
@@ -721,6 +722,90 @@ describe('G. Additional useful tests', () => {
 			const bd: BigDecimal = FromBigInt(5n, 4);
 			const result = ceil(bd);
 			expect(areEqual(result, bd)).toBe(true);
+		});
+	});
+
+	describe('round', () => {
+		it('rounds positive numbers down when fraction < 0.5', () => {
+			// 3.25 -> 3
+			const bd: BigDecimal = { bigint: 13n, divex: 2 }; // 13/4 = 3.25
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('3');
+			expect(result.divex).toBe(bd.divex);
+			// Internal check: 3 * 2^2 = 12
+			expect(result.bigint).toBe(12n);
+		});
+
+		it('rounds positive numbers up when fraction > 0.5', () => {
+			// 3.75 -> 4
+			const bd: BigDecimal = { bigint: 15n, divex: 2 }; // 15/4 = 3.75
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('4');
+			expect(result.divex).toBe(bd.divex);
+		});
+
+		it('rounds positive numbers up when fraction == 0.5 (Half Up)', () => {
+			// 3.5 -> 4
+			const bd: BigDecimal = { bigint: 7n, divex: 1 }; // 7/2 = 3.5
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('4');
+			expect(result.divex).toBe(bd.divex);
+		});
+
+		it('rounds negative numbers towards zero when fraction == 0.5 (Half Up towards +Infinity)', () => {
+			// -3.5 -> -3
+			// Logic trace: -7n + 1n (half) = -6n. -6n >> 1 = -3n.
+			const bd: BigDecimal = { bigint: -7n, divex: 1 }; // -3.5
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('-3');
+			expect(result.divex).toBe(bd.divex);
+		});
+
+		it('rounds negative numbers away from zero when fraction > 0.5 (magnitude)', () => {
+			// -3.75 -> -4
+			const bd: BigDecimal = { bigint: -15n, divex: 2 }; // -3.75
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('-4');
+			expect(result.divex).toBe(bd.divex);
+		});
+
+		it('rounds negative numbers towards zero when fraction < 0.5 (magnitude)', () => {
+			// -3.25 -> -3
+			const bd: BigDecimal = { bigint: -13n, divex: 2 }; // -3.25
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('-3');
+			expect(result.divex).toBe(bd.divex);
+		});
+
+		it('leaves integers unchanged', () => {
+			const bd: BigDecimal = FromBigInt(42n, 10);
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('42');
+			expect(areEqual(bd, result)).toBe(true);
+		});
+
+		it('leaves zero unchanged', () => {
+			const bd: BigDecimal = FromBigInt(0n, 5);
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('0');
+			expect(isZero(result)).toBe(true);
+		});
+
+		it('handles large precision inputs correctly', () => {
+			// 1.5000... at high precision
+			const bd: BigDecimal = { bigint: 3n << 49n, divex: 50 };
+			const result = round(bd);
+
+			expect(toExactString(result)).toBe('2');
+			expect(result.divex).toBe(50);
 		});
 	});
 
