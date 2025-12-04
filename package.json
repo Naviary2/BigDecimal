@@ -15,6 +15,7 @@
   },
   "keywords": [
     "bigint",
+    "bigfloat",
     "bigdecimal",
     "binary",
     "arbitrary-precision",
