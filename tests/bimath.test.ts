@@ -147,7 +147,7 @@ describe('B. toDebugBinaryString', () => {
 	it('returns correct format for 0n', () => {
 		const result = bimath.toDebugBinaryString(0n);
 		expect(result).toBe(
-			'0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 (1-chunk, 8 bytes, 64 bits)'
+			'0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 (1-chunk, 8 bytes, 64 bits)',
 		);
 	});
 

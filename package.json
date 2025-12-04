@@ -4,11 +4,16 @@
   "description": "High-performance arbitrary-precision decimal arithmetic for JavaScript.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "lint": "eslint src tests",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -23,13 +28,13 @@
     "float",
     "floating-point",
     "fixed-point",
-	"precision",
+    "precision",
     "optimized",
     "high-performance",
     "performance",
     "naviary",
-	"infinite-chess",
-	"infinitechess",
+    "infinite-chess",
+    "infinitechess",
     "ic"
   ],
   "author": "Naviary",
@@ -45,6 +50,7 @@
     "@typescript-eslint/parser": "^8.48.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.3",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "vitest": "^3.2.3"
