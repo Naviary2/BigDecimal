@@ -1,5 +1,5 @@
 {
-  "name": "@ic/bigdecimal",
+  "name": "@naviary/bigdecimal",
   "version": "1.0.0",
   "description": "High-performance arbitrary-precision decimal arithmetic for JavaScript.",
   "main": "dist/index.js",
@@ -16,6 +16,7 @@
   },
   "keywords": [
     "bigint",
+    "bigfloat",
     "bigdecimal",
     "binary",
     "arbitrary-precision",
@@ -44,6 +45,7 @@
     "@typescript-eslint/parser": "^8.48.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "vitest": "^3.2.3"
   }
