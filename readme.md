@@ -123,3 +123,5 @@ Competitors behave as floating-point libraries by default. To simulate fixed-poi
 Using native CPU-optimized BigInt arithmetic clearly achieves significant speedups in heavy operations! And the speedups performance gaps only grow larger as the number of digits increases.
 
 Full results:
+
+<img width="701" height="975" alt="Screenshot 2025-12-04 at 5 17 58 AM" src="https://github.com/user-attachments/assets/e83f9ec3-1fb8-4cdd-9bcb-a6dd2b1a7cfd" />
