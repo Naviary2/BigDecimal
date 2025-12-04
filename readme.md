@@ -1,6 +1,6 @@
 # High Performance Arbitrary Decimal Precision
 
-Binary BigDecimal implementation focusing on speed. This outperforms mainstream libraries like [decimal.js](https://www.npmjs.com/package/decimal.js/v/10.2.1) or [bignumber.js](https://www.npmjs.com/package/bignumber.js).
+Binary BigDecimal implementation focusing on performance. This reaches performance 15x to 60x faster on various operations than mainstream libraries [decimal.js](https://www.npmjs.com/package/decimal.js/v/10.2.1), and [bignumber.js](https://www.npmjs.com/package/bignumber.js) (benchmarks below).
 
 This library was designed by [Naviary](https://www.youtube.com/@Naviary) to fill a missing gap in software requirements. A demonstration of its capabilities can be seen in this video, [The Journey to the Edge of the Infinite Chess Board](https://youtu.be/AaBkZzy2t0Y?si=b5lc2QYaHoF28cnW). This has been tested for numbers as large as 10^1000000, but theoretically it should work for as long as the bigint max size isn't exceeded, which is 4.20e323228496 in the V8 JavaScript engine.
 
@@ -12,7 +12,7 @@ You need speed greater speed than that of the mainstream libraries.
 
 ## When not to use
 
-You don't need 100% accuracy, just needing numbers to not hit Infinity when they get too big, or zero when they get too small. Here I would recommend using [break_infinity.js](https://github.com/Patashu/break_infinity.js/tree/master?tab=readme-ov-file)! That is considerably faster than this for that purpose.
+You don't need 100% accuracy, just needing numbers to not hit Infinity when they get too big, or zero when they get too small. Here I would recommend using [break_infinity.js](https://github.com/Patashu/break_infinity.js/tree/master?tab=readme-ov-file)! That is faster than this for that purpose.
 
 You need decimal numbers to be **perfectly** representable. For example, 0.1. This library will make a very close approximation to that, of which the accuracy is customizable. But, that's how standard javascript numbers work anyway, right? 🤷‍♂️ They approximate. In graphics rendering, approximations are typically enough. However, all integers and dyadic rationals can still be perfectly represented.
 
@@ -98,3 +98,28 @@ All methods do not modify the input arguments, returning a new BigDecimal, unles
 | `toBigInt(x)`             | Converts to a BigInt, rounding to the nearest integer.                                                                                  |
 | `toExactString(x)`        | Returns the full, precise decimal string.                                                                                               |
 | `toApproximateString(x)`  | Returns a rounded decimal string, trimming extraneous digits that give an illusion of precision.                                        |
+
+## Benchmarks
+
+Performance comparisons were conducted using the mitata micro-benchmarking framework. All tests were normalized to 100 decimal digits of precision (approx. 333 bits).
+
+Replicate by running:
+
+```
+npm run bench
+```
+
+Summary of results:
+
+| Operation (100 Digits)   | @naviary/bigdecimal | bignumber.js | decimal.js | Speedup vs Best Competitor |
+| :----------------------- | :------------------ | :----------- | :--------- | :------------------------- |
+| **Addition**             | **38 ns**           | 169 ns       | 434 ns     | **4.4x Faster**            |
+| **Multiplication**       | **180 ns**          | 5,100 ns     | 7,030 ns   | **28x Faster**             |
+| **Division**             | **536 ns**          | 8,150 ns     | 9,730 ns   | **15x Faster**             |
+| **Fixed-Point Multiply** | **101 ns**          | 5,250 ns     | 7,390 ns   | **52x Faster**             |
+
+Competitors behave as floating-point libraries by default. To simulate fixed-point behavior, they require a manual rounding step after every operation, which incurred some extra overhead.
+
+Using native CPU-optimized BigInt arithmetic clearly achieves significant speedups in heavy operations! And the speedups performance gaps only grow larger as the number of digits increases.
+
+Full results:
