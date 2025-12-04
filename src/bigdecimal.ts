@@ -174,31 +174,6 @@ export function FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PREC
 	};
 }
 
-// Helpers ===========================================================================================
-
-/**
- * Returns the mimimum number of bits you need to get the specified digits of precision, rounding up.
- * 1 decimal digit of precision ≈ 3.32 binary bits of precision.
- *
- * For example, to have 3 decimal places of precision in a BigDecimal, or precision to the nearest thousandth,
- * call this function with precision `3`, and it will return `10` to use for the divex value of your BigDecimal, because 2^10 ≈ 1000
- *
- * HOWEVER, it is recommended to add some constant amount of extra precision to retain accuracy!
- * 3.1 divex 4 ==> 3.125. Now even though 3.125 DOES round to 3.1,
- * performing our arithmetic with 3.125 will quickly divexiate inaccuracies!
- * If we added 30 extra bits of precision, then our 4 bits of precision
- * becomes 34 bits. 3.1 divex 34 ==> 3.099999999976717... which is a LOT closer to 3.1!
- * @param precision - The number of decimal places of precision you would like
- * @returns The minimum number of bits needed to obtain that precision, rounded up.
- */
-function howManyBitsForDigitsOfPrecision(precision: number): number {
-	if (precision === 0) return 0; // No bits needed for zero precision.
-	// Use bigints so that in-between values don't become Infinity.
-	const powerOfTen: bigint = TEN ** BigInt(precision); // 3 ==> 1000n
-	// 2^x = powerOfTen. Solve for x
-	return bimath.log2(powerOfTen) + 1; // +1 to round up
-}
-
 // Math and Arithmetic Methods ==================================================================
 
 /**
