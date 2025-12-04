@@ -568,10 +568,8 @@ export function sqrt(
 		bigint: ONE,
 		divex: Math.round(-bitLength / 2),
 	};
-	// console.log("Initial guess for sqrt (before normalization):"); printInfo(x_k);
 	// Align the guess to same precision as subsequent calculations.
 	x_k = normalize(x_k, mantissaBits); // Normalize the guess to the desired mantissa bits.
-	// console.log(`Initial guess for sqrt:`); printInfo(x_k);
 
 	// 3. Iterate using Newton's method: x_{k+1} = (x_k + n / x_k) / 2
 	// We continue until the guess stabilizes.
@@ -1186,4 +1184,3 @@ export default {
 };
 
 export type { BigDecimal };
-
