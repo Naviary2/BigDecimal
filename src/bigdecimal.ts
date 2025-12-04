@@ -1157,7 +1157,7 @@ export default {
 	// Constructors
 	FromNumber,
 	FromBigInt,
-	// Math and Arithmetic
+	// Arithmetic
 	add,
 	subtract,
 	multiply_fixed,
@@ -1169,28 +1169,30 @@ export default {
 	pow,
 	sqrt,
 	hypot,
+	log10,
+	ln,
+	exp,
 	abs,
-	clone,
-	setExponent,
-	fixPrecision,
-	compare,
-	areEqual,
-	isZero,
-	hasDefaultPrecision,
 	negate,
 	min,
 	max,
 	clamp,
+	round,
 	floor,
 	ceil,
+	// Comparison
+	compare,
+	areEqual,
 	isInteger,
-	log10,
-	ln,
-	exp,
-	// Conversions and Utility
-	toBigInt,
-	// toExactNumber,
+	isZero,
+	// Utility
+	clone,
+	setExponent,
+	fixPrecision,
+	hasDefaultPrecision,
+	// Conversion
 	toNumber,
+	toBigInt,
 	toExactString,
 	toApproximateString,
 };
