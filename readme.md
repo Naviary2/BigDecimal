@@ -6,7 +6,7 @@ This library was designed by [Naviary](https://www.youtube.com/@Naviary) to fill
 
 ## When to use this library
 
-You need arbitrary large numbers, with arbitrary decimal precision, and integer calculations must be **exact**, not approximate.
+You need arbitrary large numbers, with arbitrary decimal precision, and integer calculations must be **exact**, not approximate. (Support for floating point operations included when precision isn't required)
 
 You need speed greater than that of the mainstream libraries.
 
