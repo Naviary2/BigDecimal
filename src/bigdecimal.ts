@@ -37,7 +37,7 @@ interface BigDecimal {
  * 23 bits approximately matches float32 precision, giving us about 7 decimal places.
  * 53 bits approximately matches float64 precision, giving us about 16 decimal places.
  */
-const DEFAULT_WORKING_PRECISION = 23;
+let DEFAULT_WORKING_PRECISION = 23;
 
 /** The target number of bits for the mantissa in floating-point operations. Higher is more precise but slower. */
 const DEFAULT_MANTISSA_PRECISION_BITS = DEFAULT_WORKING_PRECISION; // Gives us about 7, or 16 digits of precision, depending whether we have 32 bit or 64 bit precision (javascript doubles are 64 bit).
@@ -69,6 +69,19 @@ const ZERO: bigint = 0n;
 const ONE: bigint = 1n;
 const FIVE: bigint = 5n;
 const TEN: bigint = 10n;
+
+// Config ===================================================================
+
+/**
+ * Sets the default number of bits of precision to use in all BigDecimal calculations where a specific precision is not requested. DEFAULT: 23 bits (~7 decimal digits).
+ * @param precision - The number of bits of precision dedicated to the decimal portion.
+ */
+function SetGlobalPrecision(precision: number): void {
+	if (precision < 0)
+		throw new Error(`Precision must be greater than zero. Received: ${precision}`);
+
+	DEFAULT_WORKING_PRECISION = precision;
+}
 
 // Big Decimal Contructor =============================================================
 
@@ -1139,6 +1152,9 @@ function getEffectiveDecimalPlaces(bd: BigDecimal): number {
 // Exports ====================================================================
 
 export default {
+	// Config
+	SetGlobalPrecision,
+	// Constructors
 	FromNumber,
 	FromBigInt,
 	// Math and Arithmetic

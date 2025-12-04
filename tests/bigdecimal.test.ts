@@ -14,7 +14,7 @@
  * Note: Fragile tests (rounding edges) are marked with comments.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import BD, {
 	FromNumber,
 	FromBigInt,
@@ -948,5 +948,66 @@ describe('G. Additional useful tests', () => {
 			expect(typeof BD.pow).toBe('function');
 			expect(typeof BD.toExactString).toBe('function');
 		});
+	});
+});
+
+// ============================================================================
+// H. Global Precision Configuration
+// ============================================================================
+describe('H. Global Precision Configuration', () => {
+	const ORIGINAL_DEFAULT_PRECISION = 23;
+
+	// Teardown: Reset the global precision to the original default after each test
+	// to ensure we don't pollute the state for other tests in this suite.
+	afterEach(() => {
+		BD.SetGlobalPrecision(ORIGINAL_DEFAULT_PRECISION);
+	});
+
+	it('starts with the documented default precision (23)', () => {
+		// Verify initial state
+		const bd = BD.FromBigInt(1n);
+		expect(bd.divex).toBe(23);
+	});
+
+	it('SetGlobalPrecision updates the default for FromBigInt', () => {
+		BD.SetGlobalPrecision(50);
+		const bd = BD.FromBigInt(10n);
+
+		expect(bd.divex).toBe(50);
+		// Check value is still correct: 10 * 2^50
+		expect(bd.bigint).toBe(10n << 50n);
+	});
+
+	it('SetGlobalPrecision updates the default for FromNumber', () => {
+		BD.SetGlobalPrecision(10);
+		const bd = BD.FromNumber(5);
+
+		expect(bd.divex).toBe(10);
+	});
+
+	it('fixPrecision updates a BigDecimal to the NEW global precision', () => {
+		// Create a BD with arbitrary precision
+		const bd = BD.FromBigInt(1n, 5);
+		expect(bd.divex).toBe(5);
+
+		// Change global settings
+		BD.SetGlobalPrecision(32);
+
+		// Apply fix
+		BD.fixPrecision(bd);
+
+		expect(bd.divex).toBe(32);
+	});
+
+	it('hasDefaultPrecision correctly identifies the NEW global precision', () => {
+		BD.SetGlobalPrecision(64);
+
+		const bdMatching = BD.FromBigInt(1n, 64);
+		const bdOldDefault = BD.FromBigInt(1n, 23);
+		const bdRandom = BD.FromBigInt(1n, 10);
+
+		expect(BD.hasDefaultPrecision(bdMatching)).toBe(true);
+		expect(BD.hasDefaultPrecision(bdOldDefault)).toBe(false);
+		expect(BD.hasDefaultPrecision(bdRandom)).toBe(false);
 	});
 });
