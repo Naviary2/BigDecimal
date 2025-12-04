@@ -16,9 +16,7 @@ import {
 const DECIMAL_PRECISION = 100;
 const BINARY_PRECISION = Math.ceil(DECIMAL_PRECISION * Math.log2(10)); // ~333 bits
 
-console.log(
-	`\n🚀 Benchmarking at ~${DECIMAL_PRECISION} decimal digits (${BINARY_PRECISION} bits)\n`,
-);
+console.log(`\nBenchmarking at ~${DECIMAL_PRECISION} decimal digits (${BINARY_PRECISION} bits)\n`);
 
 Decimal.set({ precision: DECIMAL_PRECISION });
 BigNumber.config({ DECIMAL_PLACES: DECIMAL_PRECISION });
