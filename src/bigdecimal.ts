@@ -76,7 +76,7 @@ const TEN: bigint = 10n;
  * Sets the default number of bits of precision to use in all BigDecimal calculations where a specific precision is not requested. DEFAULT: 23 bits (~7 decimal digits).
  * @param precision - The number of bits of precision dedicated to the decimal portion.
  */
-function SetGlobalPrecision(precision: number): void {
+export function SetGlobalPrecision(precision: number): void {
 	if (precision < 0)
 		throw new Error(`Precision must be greater than zero. Received: ${precision}`);
 
