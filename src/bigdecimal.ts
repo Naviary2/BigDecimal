@@ -413,7 +413,7 @@ export function divide_floating(
  * Calculates the modulo between two BigDecimals.
  * The resulting BigDecimal will have the same precision as the first argument (the dividend).
  * @param bd1 The dividend.
- * a@param bd2 The divisor.
+ * @param bd2 The divisor.
  * @returns The remainder as a new BigDecimal, with the same precision as the dividend.
  */
 export function mod(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
