@@ -8,7 +8,7 @@ This library was designed by [Naviary](https://www.youtube.com/@Naviary) to fill
 
 You need arbitrary large numbers, with arbitrary decimal precision, and integer calculations must be **exact**, not approximate.
 
-You need speed greater speed than that of the mainstream libraries.
+You need speed greater than that of the mainstream libraries.
 
 ## When not to use
 
