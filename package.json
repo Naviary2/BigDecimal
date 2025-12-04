@@ -7,7 +7,8 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc",
-    "test": "tsx src/test.ts"
+    "test": "vitest",
+    "test:watch": "vitest --watch"
   },
   "repository": {
     "type": "git",
@@ -45,6 +46,7 @@
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "tsx": "^4.19.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.3"
   }
 }
