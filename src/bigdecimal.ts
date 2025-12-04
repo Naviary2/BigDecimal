@@ -88,11 +88,10 @@ function SetGlobalPrecision(precision: number): void {
 /**
  * Creates a Big Decimal from a javascript number (double) by directly
  * interpreting its IEEE 754 binary representation extremely fast.
- * The result will have a fixed divex (scale) as specified.
  * WARNING: If the input number is too small for the target precision,
  * the resulting BigDecimal will underflow to 0.
  * @param num - The number to convert.
- * @param [precision=DEFAULT_WORKING_PRECISION] The target divex for the result.
+ * @param [precision] The target precision for the result.
  * @returns A new BigDecimal with the value from the number.
  */
 export function FromNumber(num: number, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
@@ -178,8 +177,8 @@ export function FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PREC
 
 /**
  * Adds two BigDecimal numbers.
- * The resulting BigDecimal will have a divex equal to the first argument.
- * If the second argument has a higher divex, it will be rounded before addition.
+ * The resulting BigDecimal will have a precision equal to the first argument.
+ * If the second argument has a higher precision, it will be rounded before addition.
  * @param bd1 - The first addend, which also determines the result's precision.
  * @param bd2 - The second addend.
  * @returns The sum of bd1 and bd2.
@@ -222,8 +221,8 @@ export function add(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 
 /**
  * Subtracts the second BigDecimal from the first.
- * The resulting BigDecimal will have a divex equal to the first argument (the minuend).
- * If the second argument has a higher divex, it will be rounded before subtraction.
+ * The resulting BigDecimal will have a precision equal to the first argument (the minuend).
+ * If the second argument has a higher precision, it will be rounded before subtraction.
  * @param bd1 - The minuend, which also determines the result's precision.
  * @param bd2 - The subtrahend.
  * @returns The difference of bd1 and bd2 (bd1 - bd2).
@@ -265,7 +264,7 @@ export function subtract(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 
 /**
  * [Fixed-Point Model] Multiplies two BigDecimal numbers.
- * The resulting BigDecimal will have a divex equal to the first factor.
+ * The resulting BigDecimal will have a precision equal to the first factor.
  * This provides a balance of precision and predictable behavior.
  * @param bd1 The first factor.
  * @param bd2 The second factor.
@@ -306,7 +305,7 @@ export function multiply_fixed(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 
 /**
  * [Floating-Point Model] Multiplies two BigDecimals, preserving significant digits.
- * The divex may grow, but it shouldn't grow uncontrollably.
+ * The precision may grow, but it shouldn't grow uncontrollably.
  * @param bd1 The first factor.
  * @param bd2 The second factor.
  * @param mantissaBits - How many bits of mantissa to use for the result, while still guaranteeing arbitrary integer precision. This only affects really small decimals. If not provided, the default will be used.
@@ -328,9 +327,9 @@ export function multiply_floating(
 }
 
 /**
- * [Fixed-Point Model] Divides the first BigDecimal by the second, producing a result with a predictable divex.
- * The result divex will be equal to the dividend's divex.
- * This prevents the divex from growing uncontrollably with repeated divisions.
+ * [Fixed-Point Model] Divides the first BigDecimal by the second.
+ * The result precision will be equal to the dividend's precision.
+ * This prevents the precision from growing uncontrollably with repeated divisions.
  * @param bd1 - The dividend.
  * @param bd2 - The divisor.
  * @param [workingPrecision=DEFAULT_WORKING_PRECISION] - Extra bits for internal calculation to prevent rounding errors.
@@ -740,7 +739,7 @@ export function round(bd: BigDecimal): BigDecimal {
 
 /**
  * Calculates the floor of a BigDecimal (the largest integer less than or equal to it).
- * The resulting BigDecimal will have the same divex as the input.
+ * The resulting BigDecimal will have the same precision as the input.
  * e.g., floor(2.7) -> 2.0, floor(-2.7) -> -3.0
  * @param bd The BigDecimal to process.
  * @returns A new BigDecimal representing the floored value, at the same precision.
@@ -779,7 +778,7 @@ export function floor(bd: BigDecimal): BigDecimal {
 
 /**
  * Calculates the ceiling of a BigDecimal (the smallest integer greater than or equal to it).
- * The resulting BigDecimal will have the same divex as the input.
+ * The resulting BigDecimal will have the same precision as the input.
  * e.g., ceil(2.1) -> 3.0, ceil(-2.1) -> -2.0
  * @param bd The BigDecimal to process.
  * @returns A new BigDecimal representing the ceiled value, at the same precision.
