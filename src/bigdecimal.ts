@@ -23,7 +23,7 @@ interface BigDecimal {
 	divex: number;
 }
 
-// Config ===========================================================
+// Variables ===========================================================
 
 /**
  * The default number of bits dedicated to the decimal portion of the BigDecimal.
@@ -92,7 +92,7 @@ function SetGlobalPrecision(precision: number): void {
  * WARNING: If the input number is too small for the target precision,
  * the resulting BigDecimal will underflow to 0.
  * @param num - The number to convert.
- * @param [precision] The target precision for the result.
+ * @param [precision] The target precision for the BigDecimal.
  * @returns A new BigDecimal with the value from the number.
  */
 export function FromNumber(num: number, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
@@ -101,7 +101,6 @@ export function FromNumber(num: number, precision: number = DEFAULT_WORKING_PREC
 	if (!isFinite(num))
 		throw new Error(`Cannot create a BigDecimal from a non-finite number. Received: ${num}`);
 
-	// Handle the zero case.
 	if (num === 0) return { bigint: ZERO, divex: precision };
 
 	// Get the raw, unadjusted BigDecimal representation.
@@ -116,25 +115,23 @@ export function FromNumber(num: number, precision: number = DEFAULT_WORKING_PREC
 
 /**
  * Internal helper to parse the raw IEEE 754 bits of a JavaScript number
- * into the core components of a BigDecimal (bigint and divex) without
- * any final precision adjustments.
+ * into the core components of a BigDecimal (bigint and divex) without any final precision adjustments.
  * @param num The number to parse.
  * @returns An object containing the raw, un-normalized BigDecimal
  *          representation of the number. Returns null if the number is zero.
  */
 function _fromNumberBits(num: number): BigDecimal | null {
-	// 1. Handle the zero case. The callers will handle this special value.
+	// Handle the zero case.
 	if (num === 0) return null;
 
-	// 2. Extract the raw 64 bits of the float into a BigInt.
-	// This is a standard and fast technique to get the binary components.
+	// Extract the raw 64 bits of the float into a BigInt.
 	const buffer = new ArrayBuffer(8);
 	const floatView = new Float64Array(buffer);
 	const intView = new BigInt64Array(buffer);
 	floatView[0] = num;
 	const bits = intView[0]!;
 
-	// 3. Parse the sign, exponent, and mantissa from the bits.
+	// Parse the sign, exponent, and mantissa from the bits.
 	const sign = bits < ZERO ? -ONE : ONE;
 	const exponent = Number((bits >> 52n) & 0x7ffn);
 	const mantissa = bits & 0xfffffffffffffn;
@@ -160,9 +157,9 @@ function _fromNumberBits(num: number): BigDecimal | null {
 }
 
 /**
- * Creates a Big Decimal from a bigint and a desired precision level.
- * @param num
- * @param [precision=DEFAULT_WORKING_PRECISION] The amount of extra precision to add.
+ * Creates a BigDecimal from a bigint.
+ * @param num - The bigint to convert.
+ * @param [precision] The target precision for the BigDecimal.
  * @returns A new BigDecimal with the value from the bigint.
  */
 export function FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
@@ -177,8 +174,7 @@ export function FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PREC
 // Arithmetic ==================================================================
 
 /**
- * Adds two BigDecimal numbers.
- * The resulting BigDecimal will have a precision equal to the first argument.
+ * Adds two BigDecimals. The result will have a precision equal to the first argument.
  * If the second argument has a higher precision, it will be rounded before addition.
  * @param bd1 - The first addend, which also determines the result's precision.
  * @param bd2 - The second addend.
@@ -264,20 +260,19 @@ export function subtract(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 }
 
 /**
- * [Fixed-Point Model] Multiplies two BigDecimal numbers.
+ * [Fixed-Point Model] Multiplies two BigDecimal numbers together.
  * The resulting BigDecimal will have a precision equal to the first factor.
- * This provides a balance of precision and predictable behavior.
  * @param bd1 The first factor.
  * @param bd2 The second factor.
- * @returns The product of bd1 and bd2, with the same precision as the first factor.
+ * @returns The product of bd1 and bd2.
  */
 export function multiply_fixed(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 	// The true divex of the raw product is (bd1.divex + bd2.divex).
-	// We must shift the raw product to scale it to the targetDivex (bd1.divex).
-	// The total shift is therefore equal to bd2.divex.
+	// Shift the raw product to scale it to the targetDivex (bd1.divex).
+	// The total shift is therefore is bd2.divex.
 	const shiftAmount = BigInt(bd2.divex);
 
-	// First, get the raw product of the internal bigints.
+	// Get the raw product of the internal bigints.
 	const rawProduct = bd1.bigint * bd2.bigint;
 	let product: bigint;
 
@@ -305,11 +300,11 @@ export function multiply_fixed(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 }
 
 /**
- * [Floating-Point Model] Multiplies two BigDecimals, preserving significant digits.
- * The precision may grow, but it shouldn't grow uncontrollably.
+ * [Floating-Point Model] Multiplies two BigDecimals, preserving the most significant digits.
+ * The result has a predictable mantissa size.
  * @param bd1 The first factor.
  * @param bd2 The second factor.
- * @param mantissaBits - How many bits of mantissa to use for the result, while still guaranteeing arbitrary integer precision. This only affects really small decimals. If not provided, the default will be used.
+ * @param [mantissaBits] How many bits the result's mantissa should have.
  * @returns The product of bd1 and bd2.
  */
 export function multiply_floating(
@@ -317,23 +312,22 @@ export function multiply_floating(
 	bd2: BigDecimal,
 	mantissaBits?: number,
 ): BigDecimal {
-	// 1. Calculate the raw product of the internal bigints.
+	// Calculate the raw product of the internal bigints.
 	const newBigInt = bd1.bigint * bd2.bigint;
 
-	// 2. The new scale is the sum of the original scales.
+	// The new scale is the sum of the original scales.
 	const newDivex = bd1.divex + bd2.divex;
 
-	// 3. Immediately hand off to normalize to enforce the floating-point model.
+	// Immediately hand off to normalize to enforce the floating-point model.
 	return normalize({ bigint: newBigInt, divex: newDivex }, mantissaBits);
 }
 
 /**
  * [Fixed-Point Model] Divides the first BigDecimal by the second.
- * The result precision will be equal to the dividend's precision.
- * This prevents the precision from growing uncontrollably with repeated divisions.
+ * The resulting BigDecimal will have the same precision as the first argument (the dividend).
  * @param bd1 - The dividend.
  * @param bd2 - The divisor.
- * @param [workingPrecision=DEFAULT_WORKING_PRECISION] - Extra bits for internal calculation to prevent rounding errors.
+ * @param [workingPrecision] Extra bits for internal calculation to prevent rounding errors.
  * @returns The quotient of bd1 and bd2 (bd1 / bd2), with the same precision as the dividend.
  */
 export function divide_fixed(
@@ -343,18 +337,18 @@ export function divide_fixed(
 ): BigDecimal {
 	if (bd2.bigint === ZERO) throw new Error('Division by zero is not allowed.');
 
-	// 1. Calculate the total shift needed for the dividend. This includes:
-	//    - The extra "workingPrecision" to ensure accuracy during division.
+	// Calculate the total shift needed for the dividend. This includes:
+	// - The extra "workingPrecision" to ensure accuracy during division.
 	const shift = BigInt(bd2.divex + workingPrecision);
 
-	// 2. Scale the dividend up.
+	// Scale the dividend up.
 	const scaledDividend = bd1.bigint << shift;
 
-	// 3. Perform the integer division. The result has `workingPrecision` extra bits.
+	// Perform the integer division. The result has `workingPrecision` extra bits.
 	const quotient = scaledDividend / bd2.bigint;
 
-	// 4. Round the result by shifting it back down by `workingPrecision`.
-	//    We add "0.5" before truncating to round half towards positive infinity.
+	// Round the result by shifting it back down by `workingPrecision`.
+	// We add "0.5" before truncating to round half towards positive infinity.
 	const workingPrecisionBigInt = BigInt(workingPrecision);
 	if (workingPrecisionBigInt <= ZERO)
 		return {
@@ -371,12 +365,12 @@ export function divide_fixed(
 }
 
 /**
- * [Floating-Point Model] Divides two BigDecimals, preserving significant digits.
+ * [Floating-Point Model] Divides two BigDecimals, preserving the most significant digits.
  * This method dynamically calculates the required internal precision to ensure the result
  * never truncates to zero unless the dividend is zero.
  * @param bd1 - The dividend.
  * @param bd2 - The divisor.
- * @param [mantissaBits=DEFAULT_MANTISSA_PRECISION_BITS] - How many bits of mantissa to preserve in the result.
+ * @param [mantissaBits] How many bits of mantissa to preserve in the result.
  * @returns The quotient of bd1 and bd2 (bd1 / bd2).
  */
 export function divide_floating(
@@ -387,11 +381,11 @@ export function divide_floating(
 	if (bd2.bigint === ZERO) throw new Error('Division by zero is not allowed.');
 	if (bd1.bigint === ZERO) return { bigint: ZERO, divex: mantissaBits }; // Or any divex, normalize will handle it.
 
-	// 1. Calculate bit length of the absolute values for a magnitude comparison.
+	// Calculate bit length of the absolute values for a magnitude comparison.
 	const len1 = bimath.bitLength_bisection(bimath.abs(bd1.bigint));
 	const len2 = bimath.bitLength_bisection(bimath.abs(bd2.bigint));
 
-	// 2. Determine the necessary left shift.
+	// Determine the necessary left shift.
 	// We need to shift bd1.bigint left enough so that the resulting quotient has 'mantissaBits' of precision.
 	const bitDifference = len2 - len1;
 
@@ -399,24 +393,25 @@ export function divide_floating(
 	// We add 1 for extra safety against off-by-one truncation errors in the integer division.
 	const requiredShift = BigInt(Math.max(bitDifference, 0) + mantissaBits + 1);
 
-	// 3. Scale the dividend up by the required shift amount.
+	// Scale the dividend up by the required shift amount.
 	const scaledDividend = bd1.bigint << requiredShift;
 
-	// 4. Perform the single, precise integer division.
+	// Perform the single, precise integer division.
 	const quotient = scaledDividend / bd2.bigint;
 
-	// 5. Calculate the new divex for the result.
+	// Calculate the new divex for the result.
 	// The total scaling factor is 2^requiredShift from our scaling,
 	// and we must also account for the original exponents.
 	const newDivex = bd1.divex - bd2.divex + Number(requiredShift);
 
-	// 6. Normalize the result to the target mantissa size. This will trim any excess bits
+	// Normalize the result to the target mantissa size. This will trim any excess bits
 	// if the dividend was much larger than the divisor.
 	return normalize({ bigint: quotient, divex: newDivex }, mantissaBits);
 }
 
 /**
  * Calculates the modulo between two BigDecimals.
+ * The resulting BigDecimal will have the same precision as the first argument (the dividend).
  * @param bd1 The dividend.
  * a@param bd2 The divisor.
  * @returns The remainder as a new BigDecimal, with the same precision as the dividend.
@@ -487,10 +482,10 @@ export function powerInt(base: BigDecimal, exp: number): BigDecimal {
  * Calculates the power of a BigDecimal to any exponent (base^exp).
  * This works for integer and fractional exponents by using the identity:
  * base^exp = e^(exp * ln(base)).
- * If the exponent is an integer, it automatically uses the more efficient integer power function.
+ * If the exponent is an integer, we automatically use the more efficient integer power function.
  * @param base The base BigDecimal.
  * @param exponent The exponent BigDecimal. Potential precision loss if the exponent came from a BigDecimal with extremely high precision.
- * @param mantissaBits The precision of the result in bits.
+ * @param mantissaBits How many bits of mantissa to preserve in the result.
  * @returns A new BigDecimal representing base^exp.
  */
 export function pow(
@@ -498,7 +493,7 @@ export function pow(
 	exponent: number,
 	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
 ): BigDecimal {
-	// 1. Handle edge cases
+	// Handle edge cases
 	if (base.bigint < ZERO && !Number.isInteger(exponent)) {
 		throw new Error(
 			'Power of a negative base to a non-integer exponent results in a complex number, which is not supported.',
@@ -513,32 +508,34 @@ export function pow(
 	// If the exponent is an integer, use the more efficient integer power function.
 	if (Number.isInteger(exponent)) return powerInt(base, exponent);
 
-	// 2. Calculate ln(base) as a standard JavaScript number.
+	// Calculate ln(base) as a standard JavaScript number.
 	const logOfBase = ln(base);
 
-	// 3. Multiply: exponent * ln(base)
+	// Multiply: exponent * ln(base)
 	const product = exponent * logOfBase;
 
-	// 4. Convert the resulting number back to a BigDecimal to be used in exp().
+	// Convert the resulting number back to a BigDecimal to be used in exp().
 	const productBD = FromNumber(product, mantissaBits);
 
-	// 5. Calculate the final result: e^(product)
+	// Calculate the final result: e^(product)
 	return exp(productBD, mantissaBits);
 }
 
 /**
  * [Floating-Point Model] Calculates the square root of a BigDecimal using Newton's method.
- * The precision of the result is determined by the `mantissaBits` parameter.
+ * @param bd - The BigDecimal to find the square root of.
+ * @param [mantissaBits] How many bits of mantissa to preserve in the result.
+ * @returns A new BigDecimal representing the square root of bd.
  */
 export function sqrt(
 	bd: BigDecimal,
 	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
 ): BigDecimal {
-	// 1. Validate input
+	// Validate input
 	if (bd.bigint < ZERO) throw new Error('Cannot calculate the square root of a negative number.');
 	if (bd.bigint === ZERO) return { bigint: ZERO, divex: bd.divex };
 
-	// 2. Make an initial guess (x_0)
+	// Make an initial guess (x_0)
 	// A good initial guess is crucial for fast convergence.
 	// A common technique is to use a value related to 2^(bitLength/2).
 	// But that's the bitlength of the INTEGER portion, none of the decimal bits.
@@ -554,10 +551,7 @@ export function sqrt(
 	// We continue until the guess stabilizes.
 	let last_x_k = clone(x_k); // A copy to check for convergence
 
-	// console.log("Beginning square root iteration for value:", toString(bd));
-
 	const MAX_ITERATIONS = 100; // Limit iterations to prevent infinite loops in case of non-convergence.
-	// console.log(`Starting sqrt iterations with mantissaBits = ${mantissaBits}`);
 	for (let i = 0; i < MAX_ITERATIONS; i++) {
 		// Calculate `n / x_k` using high-precision floating division
 		const n_div_xk = divide_floating(bd, x_k, mantissaBits * 2);
@@ -566,12 +560,8 @@ export function sqrt(
 		// Divide by 2: `(sum) / 2`. A right shift is equivalent to division by 2.
 		x_k = { bigint: sum.bigint >> ONE, divex: sum.divex };
 
-		// console.log(`Iteration ${i}: Value = ${toExactString(x_k)}`);
-
 		// Check for convergence: if the guess is no longer changing, we've found our answer.
-		// console.log(`Iteration ${i}: x_k = ${toExactString(x_k)}`);
 		if (areEqual(x_k, last_x_k)) {
-			// console.log(`Reached convergence in sqrt after ${i} iterations: ${toString(x_k)}`);
 			return normalize(x_k, mantissaBits); // x_k has precision of n_div_xk before this
 		}
 
@@ -587,33 +577,41 @@ export function sqrt(
  * [Floating-Point Model] Calculates the hypotenuse of a right triangle, given the lengths of the two other sides.
  * @param bd1 - The length of one side.
  * @param bd2 - The length of the other side.
- * @param mantissaBits - The precision of the result in bits.
+ * @param [mantissaBits] How many bits of mantissa to preserve in the result.
  */
 export function hypot(
 	bd1: BigDecimal,
 	bd2: BigDecimal,
 	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
 ): BigDecimal {
-	// 1. Square the inputs
+	// Square the inputs
 	const bd1_squared = multiply_fixed(bd1, bd1);
 	const bd2_squared = multiply_fixed(bd2, bd2);
 
-	// 2. Add the squares together.
+	// Add the squares together.
 	const sum_of_squares: BigDecimal = add(bd1_squared, bd2_squared);
 
-	// 3. Calculate the square root of the sum to get the final result.
+	// Calculate the square root of the sum to get the final result.
 	const result = sqrt(sum_of_squares, mantissaBits);
 
 	return result;
 }
 
-/** Calculates the base-10 logarithm of a BigDecimal. */
+/**
+ * Calculates the base-10 logarithm of a BigDecimal.
+ * @param bd - The BigDecimal to calculate the logarithm of.
+ * @returns The base-10 logarithm as a number.
+ */
 export function log10(bd: BigDecimal): number {
 	// Use the change of base formula: log10(x) = ln(x) / ln(10).
 	return ln(bd) / Math.LN10;
 }
 
-/** Calculates the natural logarithm (base e) of a BigDecimal. */
+/**
+ * Calculates the natural logarithm (base e) of a BigDecimal.
+ * @param bd - The BigDecimal to calculate the natural logarithm of.
+ * @returns The natural logarithm as a number.
+ */
 export function ln(bd: BigDecimal): number {
 	if (bd.bigint < ZERO) return NaN;
 	if (bd.bigint === ZERO) return -Infinity;
@@ -628,15 +626,15 @@ export function ln(bd: BigDecimal): number {
 /**
  * [Floating-Point Model] Calculates the exponential function e^bd (the inverse of the natural logarithm).
  * This is computed using argument reduction and a Taylor Series expansion for arbitrary precision.
- * @param bd The BigDecimal exponent.
- * @param mantissaBits The precision of the result in bits.
+ * @param bd - The BigDecimal exponent.
+ * @param [mantissaBits] How many bits of mantissa to preserve in the result.
  * @returns A new BigDecimal representing e^bd.
  */
 export function exp(
 	bd: BigDecimal,
 	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
 ): BigDecimal {
-	// --- 1. Argument Reduction ---
+	// Argument Reduction:
 	// We use the identity: e^x = e^(y + k*ln(2)) = (e^y) * 2^k
 	// First, find k = round(bd / ln(2))
 	const LN2 = FromNumber(Math.LN2);
@@ -648,7 +646,7 @@ export function exp(
 	const k_ln2 = multiply_floating(k_bd, LN2, mantissaBits);
 	const y = subtract(bd, k_ln2);
 
-	// --- 2. Taylor Series for e^y ---
+	// Taylor Series for e^y:
 	// The Taylor series for e^y is Σ (y^n / n!) from n=0 to infinity.
 	// Since `y` is small, this series converges very quickly.
 	// We can compute this iteratively: term_n = term_{n-1} * (y / n)
@@ -661,7 +659,6 @@ export function exp(
 	const MAX_ITERATIONS = 100n; // Safety break
 
 	for (let n = 1n; n <= MAX_ITERATIONS; n++) {
-		// console.log(`Iteration ${n}:`);
 		const n_bd = FromBigInt(n, mantissaBits);
 
 		// Calculate the next term: term = term * (y / n)
@@ -670,13 +667,10 @@ export function exp(
 
 		// Add the new term to the sum.
 		sum = add(sum, term);
-		// console.log("New Sum:", toString(sum));
 
 		// Check for convergence.
 		if (areEqual(sum, lastSum)) {
-			// console.log(`exp() converged after ${i} iterations.`);
-
-			// --- 3. Scale the Result ---
+			// Scale the Result:
 			// We now have e^y. The final result is (e^y) * 2^k.
 			// A multiplication by 2^k is a simple divex adjustment.
 			// value = (bigint / 2^divex) * 2^k = bigint / 2^(divex - k)
@@ -708,30 +702,50 @@ export function abs(bd: BigDecimal): BigDecimal {
 }
 
 /**
- * Negates a BigDecimal.
- *
- * Non-mutating; returns a new BigDecimal.
+ * Negates a BigDecimal. Non-mutating, returning a new BigDecimal.
+ * @param bd - The BigDecimal to negate.
+ * @returns A new BigDecimal representing the negated value.
  */
 export function negate(bd: BigDecimal): BigDecimal {
 	return { bigint: -bd.bigint, divex: bd.divex };
 }
 
-/** Returns the smaller of two BigDecimals. */
+/**
+ * Returns the smaller of two BigDecimals.
+ * @param bd1 - The first BigDecimal.
+ * @param bd2 - The second BigDecimal.
+ * @returns A reference to the smaller BigDecimal.
+ */
 export function min(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 	return compare(bd1, bd2) === 1 ? bd2 : bd1;
 }
 
-/** Returns the larger of two BigDecimals. */
+/**
+ * Returns the larger of two BigDecimals.
+ * @param bd1 - The first BigDecimal.
+ * @param bd2 - The second BigDecimal.
+ * @returns A reference to the larger BigDecimal.
+ */
 export function max(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 	return compare(bd1, bd2) === -1 ? bd2 : bd1;
 }
 
-/** Returns a BigDecimal that is clamped between the specified minimum and maximum values. */
+/**
+ * Returns a BigDecimal that is clamped between the specified minimum and maximum values.
+ * @param bd - The BigDecimal to clamp.
+ * @param min - The minimum allowable value.
+ * @param max - The maximum allowable value.
+ * @returns A reference to one of the input BigDecimals that are within range.
+ */
 export function clamp(bd: BigDecimal, min: BigDecimal, max: BigDecimal): BigDecimal {
 	return compare(bd, min) < 0 ? min : compare(bd, max) > 0 ? max : bd;
 }
 
-/** Rounds a BigDecimal to the nearest integer, rounding half up. */
+/**
+ * Rounds a BigDecimal to the nearest integer, rounding half up.
+ * @param bd - The BigDecimal to round.
+ * @returns A new BigDecimal representing the rounded value, at the same precision.
+ */
 export function round(bd: BigDecimal): BigDecimal {
 	const bigintRounded = toBigInt(bd);
 	// Create a new BigDecimal with the rounded bigint and the same divex as the input.
@@ -741,8 +755,7 @@ export function round(bd: BigDecimal): BigDecimal {
 /**
  * Calculates the floor of a BigDecimal (the largest integer less than or equal to it).
  * The resulting BigDecimal will have the same precision as the input.
- * e.g., floor(2.7) -> 2.0, floor(-2.7) -> -3.0
- * @param bd The BigDecimal to process.
+ * @param bd - The BigDecimal to process.
  * @returns A new BigDecimal representing the floored value, at the same precision.
  */
 export function floor(bd: BigDecimal): BigDecimal {
@@ -781,7 +794,7 @@ export function floor(bd: BigDecimal): BigDecimal {
  * Calculates the ceiling of a BigDecimal (the smallest integer greater than or equal to it).
  * The resulting BigDecimal will have the same precision as the input.
  * e.g., ceil(2.1) -> 3.0, ceil(-2.1) -> -2.0
- * @param bd The BigDecimal to process.
+ * @param bd - The BigDecimal to process.
  * @returns A new BigDecimal representing the ceiled value, at the same precision.
  */
 export function ceil(bd: BigDecimal): BigDecimal {
@@ -817,15 +830,14 @@ export function ceil(bd: BigDecimal): BigDecimal {
 /**
  * Normalizes a BigDecimal to enforce a true floating-point precision model.
  * For any number, it trims the mantissa to `precisionBits` to standardize precision,
- * adjusting the `divex` accordingly. This allows `divex` to become negative to
- * represent large numbers.
- * @param bd The BigDecimal to normalize.
- * @param [precisionBits=DEFAULT_MANTISSA_PRECISION_BITS] The target mantissa bits.
+ * adjusting the `divex` accordingly. This allows `divex` to become negative to represent large numbers.
+ * @param bd - The BigDecimal to normalize.
+ * @param [mantissaBits] How many bits the mantissa should have after normalization.
  * @returns A new, normalized BigDecimal.
  */
 function normalize(
 	bd: BigDecimal,
-	precisionBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
+	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
 ): BigDecimal {
 	// We work with the absolute value for bit length calculation.
 	const mantissa = bimath.abs(bd.bigint);
@@ -833,7 +845,7 @@ function normalize(
 	// Use the fast, mathematical bitLength function.
 	const currentBitLength = bimath.bitLength_bisection(mantissa);
 
-	const shiftAmount = BigInt(currentBitLength - precisionBits);
+	const shiftAmount = BigInt(currentBitLength - mantissaBits);
 
 	// Calculate the new divex. It can now be negative.
 	const newDivex = bd.divex - Number(shiftAmount);
@@ -873,12 +885,21 @@ export function compare(bd1: BigDecimal, bd2: BigDecimal): -1 | 0 | 1 {
 	return bigint1 < bigint2 ? -1 : bigint1 > bigint2 ? 1 : 0;
 }
 
-/** Tests if two BigDecimals are equal in value. */
+/**
+ * Tests if two BigDecimals are numerically equal in value. (Differing precision doesn't matter)
+ * @param bd1 - The first BigDecimal.
+ * @param bd2 - The second BigDecimal.
+ * @returns True if the two BigDecimals are equal in value, false otherwise.
+ */
 export function areEqual(bd1: BigDecimal, bd2: BigDecimal): boolean {
 	return compare(bd1, bd2) === 0;
 }
+
 /**
- * Checks if a BigDecimal represents a perfect integer (a whole number). */
+ * Checks if a BigDecimal represents a perfect integer (a whole number).
+ * @param bd - The BigDecimal to check.
+ * @returns True if the BigDecimal is an integer, false otherwise.
+ */
 export function isInteger(bd: BigDecimal): boolean {
 	// If divex is non-positive, the number is already an integer value.
 	// The value is bigint * 2^(-divex), which is guaranteed to be an integer.
@@ -895,14 +916,22 @@ export function isInteger(bd: BigDecimal): boolean {
 	return bd.bigint % scale === ZERO;
 }
 
-/** Tests whether a BigDecimal is equivalent to zero. */
+/**
+ * Tests whether a BigDecimal is equivalent to zero.
+ * @param bd - The BigDecimal to test.
+ * @returns True if the BigDecimal is zero, false otherwise.
+ */
 export function isZero(bd: BigDecimal): boolean {
 	return bd.bigint === ZERO;
 }
 
 // Utility =============================================================
 
-/** Returns a deep copy of the original big decimal. */
+/**
+ * Returns a deep copy of the original big decimal.
+ * @param bd - The BigDecimal to clone.
+ * @returns A new BigDecimal that is a copy of the input.
+ */
 export function clone(bd: BigDecimal): BigDecimal {
 	return {
 		bigint: bd.bigint,
@@ -911,13 +940,13 @@ export function clone(bd: BigDecimal): BigDecimal {
 }
 
 /**
- * Modifies the BigDecimal to have the specified decimal precision, always rounding half up.
- * Mutating, modifies the original BigDecimal.
- * @param bd The BigDecimal to modify.
- * @param divex The target precision in bits.
+ * Modifies the BigDecimal to have the specified precision level,
+ * rounding if needed, without changing its numerical value.
+ * @param bd - The BigDecimal to modify.
+ * @param precision The target precision in bits.
  */
-export function setExponent(bd: BigDecimal, divex: number): void {
-	const difference = bd.divex - divex;
+export function setExponent(bd: BigDecimal, precision: number): void {
+	const difference = bd.divex - precision;
 
 	// If there's no change, do nothing.
 	if (difference === 0) return;
@@ -926,7 +955,7 @@ export function setExponent(bd: BigDecimal, divex: number): void {
 	// This is a pure scaling operation and never requires rounding.
 	if (difference < 0) {
 		bd.bigint <<= BigInt(-difference);
-		bd.divex = divex;
+		bd.divex = precision;
 		return;
 	}
 
@@ -938,23 +967,22 @@ export function setExponent(bd: BigDecimal, divex: number): void {
 
 	bd.bigint += half;
 	bd.bigint >>= BigInt(difference);
-	bd.divex = divex;
+	bd.divex = precision;
 }
 
 /**
- * Sets the BigDecimal to have the default working precision for all fixed point operations.
- * Mutating, modifies the original BigDecimal.
+ * Modifies the BigDecimal to have the global default working precision.
+ * @param bd - The BigDecimal to modify.
  */
 export function fixPrecision(bd: BigDecimal): void {
 	setExponent(bd, DEFAULT_WORKING_PRECISION);
 }
 
 /**
- * Returns whether a bigdecimal has the default [FIXED] amount of precision.
- * This is to help you catch when you accidentally use operations that change
- * the precision model from the default fixed-point, when your variable in
- * question should always remain with fixed precision.
- * @param bd The BigDecimal to check.
+ * Returns whether a bigdecimal has the global default amount of precision.
+ * This is to help you catch when you accidentally use operations that affect
+ * the precision of the value, when you would want your variable to always have a predictable precision.
+ * @param bd - The BigDecimal to check.
  * @returns True if the BigDecimal has the default working precision.
  */
 export function hasDefaultPrecision(bd: BigDecimal): boolean {
@@ -964,9 +992,10 @@ export function hasDefaultPrecision(bd: BigDecimal): boolean {
 // Conversion ====================================================================
 
 /**
- * Convert a BigDecimal to a javascript number.
+ * Converts a BigDecimal to a javascript number.
  * Will overflow to Infinity if the mantissa of the BigDecimal is too large,
- * or underflow to 0 if the precision is too high.
+ * or underflow to 0 if the precision is too high, or lose precision if
+ * it has more precision than a javascript number can represent.
  * @param bd - The BigDecimal to convert.
  * @returns The value as a standard javascript number.
  */
@@ -990,8 +1019,7 @@ export function toNumber(bd: BigDecimal): number {
  * Converts a BigDecimal to a BigInt.
  * If the BigDecimal represents a fractional number, it is rounded to the nearest integer
  * using "round half up" (towards positive infinity). E.g., 2.5 becomes 3, and -2.5 becomes -2.
- * If the BigDecimal represents a large integer (with a negative divex), it is scaled appropriately.
- * @param bd The BigDecimal to convert.
+ * @param bd - The BigDecimal to convert.
  * @returns The rounded BigInt value.
  */
 export function toBigInt(bd: BigDecimal): bigint {
@@ -1023,6 +1051,9 @@ export function toBigInt(bd: BigDecimal): bigint {
  * 9 digits of decimal precision, but in all effectiveness it only has 3 digits of precision,
  * because a single increment to 2/1024 now yields 0.001953125, which changed **every single** digit!
  * The effective decimal digits can be calculated using {@link getEffectiveDecimalPlaces}.
+ *
+ * @param bd - The BigDecimal to convert.
+ * @returns The exact decimal string representation of the BigDecimal.
  */
 export function toExactString(bd: BigDecimal): string {
 	if (bd.bigint === ZERO) return '0';
@@ -1034,19 +1065,19 @@ export function toExactString(bd: BigDecimal): string {
 	const absBigInt = isNegative ? -bd.bigint : bd.bigint;
 	const divexBigInt = BigInt(bd.divex);
 
-	// 1. Separate the integer and fractional parts.
+	// Separate the integer and fractional parts.
 	const integerPart = absBigInt >> divexBigInt;
 	const fractionalPart = absBigInt - (integerPart << divexBigInt);
 
 	// If there's no fraction, we are done. This is a crucial optimization.
 	if (fractionalPart === ZERO) return (isNegative ? '-' : '') + integerPart.toString();
 
-	// 2. Convert the fractional part to a decimal string using the 5**N shortcut.
+	// Convert the fractional part to a decimal string using the 5**N shortcut.
 	// The math is: (fractional / 2^d) * 10^d = fractional * 5^d
 	const powerOfFive = FIVE ** divexBigInt;
 	const decimalDigits = fractionalPart * powerOfFive;
 
-	// 3. Pad the decimal string with leading zeros to match the divex.
+	// Pad the decimal string with leading zeros to match the divex.
 	let decimalString = decimalDigits.toString().padStart(bd.divex, '0');
 
 	// And trim any trailing zeros.
@@ -1056,7 +1087,7 @@ export function toExactString(bd: BigDecimal): string {
 	}
 	decimalString = decimalString.slice(0, i + 1);
 
-	// 4. Combine the parts and the sign into the final string.
+	// Combine the parts and the sign into the final string.
 	const sign = isNegative ? '-' : '';
 	const integerString = integerPart.toString();
 
@@ -1068,18 +1099,21 @@ export function toExactString(bd: BigDecimal): string {
 /**
  * Converts a BigDecimal to a string, rounded to its "effective" number of decimal places.
  * This trims extraneous digits that give a false sense of precision.
+ *
+ * @param bd - The BigDecimal to convert.
+ * @returns The approximate decimal string representation of the BigDecimal.
  */
 export function toApproximateString(bd: BigDecimal): string {
-	// 1. Handle the zero case simply.
+	// Handle the zero case simply.
 	if (bd.bigint === ZERO) return '0';
 
-	// 2. Determine the effective number of decimal places to round to.
+	// Determine the effective number of decimal places to round to.
 	const decimalPlaces = getEffectiveDecimalPlaces(bd);
 
 	// If there's no fractional part to consider (or it's a large integer), just round to a BigInt and return.
 	if (decimalPlaces <= 0) return toBigInt(bd).toString();
 
-	// 3. Round to the target decimal places.
+	// Round to the target decimal places.
 	// The logic is: multiply by 10^P, round, then format back to a string.
 	const powerOfTen = TEN ** BigInt(decimalPlaces);
 	// Use the logic from `multiply_floating` to get an exact scaled value
@@ -1089,7 +1123,7 @@ export function toApproximateString(bd: BigDecimal): string {
 	const scaledBd = { bigint: scaledBigInt, divex: scaledDivex };
 	const roundedScaledInt = toBigInt(scaledBd);
 
-	// 4. Format the resulting integer back into a decimal string.
+	// Format the resulting integer back into a decimal string.
 	const absStr = bimath.abs(roundedScaledInt).toString();
 
 	let integerPart: string;
@@ -1106,12 +1140,12 @@ export function toApproximateString(bd: BigDecimal): string {
 		fractionalPart = absStr.padStart(decimalPlaces, '0');
 	}
 
-	// 5. Trim meaningless trailing zeros from the fractional part.
+	// Trim meaningless trailing zeros from the fractional part.
 	const trimmedFractionalPart = fractionalPart.replace(/0+$/, '');
 
 	const sign = roundedScaledInt < ZERO ? '-' : '';
 
-	// 6. Combine and return the final string.
+	// Combine and return the final string.
 	// If the entire fractional part was zeros, don't show the decimal point.
 	if (trimmedFractionalPart.length === 0) return sign + integerPart;
 	else return sign + integerPart + '.' + trimmedFractionalPart;
