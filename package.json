@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest --watch",
     "lint": "eslint src tests",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
