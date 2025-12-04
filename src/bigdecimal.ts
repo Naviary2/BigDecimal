@@ -42,15 +42,6 @@ const DEFAULT_WORKING_PRECISION = 23;
 /** The target number of bits for the mantissa in floating-point operations. Higher is more precise but slower. */
 const DEFAULT_MANTISSA_PRECISION_BITS = DEFAULT_WORKING_PRECISION; // Gives us about 7, or 16 digits of precision, depending whether we have 32 bit or 64 bit precision (javascript doubles are 64 bit).
 
-/**
- * The maximum divex a BigDecimal is allowed to have.
- * Beyond this, the divex is assumed to be running away towards Infinity, so an error is thrown.
- * Can be adjusted if you want more maximum precision.
- *
- * This shouldn't effect the size of the mantissa of floating point operations, though.
- */
-const MAX_DIVEX = 1e5; // Default: 1e3 (100,000)
-
 /** A list of powers of 2, 1024 in length, starting at 1 and stopping before Number.MAX_VALUE. This goes up to 2^1023. */
 const powersOfTwoList: number[] = (() => {
 	const powersOfTwo: number[] = [];
@@ -92,8 +83,8 @@ const TEN: bigint = 10n;
  * @returns A new BigDecimal with the value from the number.
  */
 export function FromNumber(num: number, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
-	if (precision < 0 || precision > MAX_DIVEX)
-		throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
+	if (precision < 0)
+		throw new Error(`Precision must be greater than zero. Received: ${precision}`);
 	if (!isFinite(num))
 		throw new Error(`Cannot create a BigDecimal from a non-finite number. Received: ${num}`);
 
@@ -162,8 +153,8 @@ function _fromNumberBits(num: number): BigDecimal | null {
  * @returns A new BigDecimal with the value from the bigint.
  */
 export function FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
-	if (precision < 0 || precision > MAX_DIVEX)
-		throw new Error(`Precision must be between 0 and ${MAX_DIVEX}. Received: ${precision}`);
+	if (precision < 0)
+		throw new Error(`Precision must be greater than zero. Received: ${precision}`);
 	return {
 		bigint: num << BigInt(precision),
 		divex: precision,
@@ -655,9 +646,6 @@ export function clone(bd: BigDecimal): BigDecimal {
  * @param divex The target precision in bits.
  */
 export function setExponent(bd: BigDecimal, divex: number): void {
-	if (divex < -MAX_DIVEX || divex > MAX_DIVEX)
-		throw new Error(`Divex must be between -${MAX_DIVEX} and ${MAX_DIVEX}. Received: ${divex}`);
-
 	const difference = bd.divex - divex;
 
 	// If there's no change, do nothing.
