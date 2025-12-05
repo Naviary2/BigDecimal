@@ -1,8 +1,7 @@
 // src/bimath.ts
 
 /**
- * This module contains complex math functions
- * for working with bigints.
+ * This module contains helpful math functions for working with bigints.
  */
 
 // Constants =========================================================
