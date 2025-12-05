@@ -1117,7 +1117,7 @@ export function toApproximateString(bd: BigDecimal): string {
 	// The logic is: multiply by 10^P, round, then format back to a string.
 	const powerOfTen = TEN ** BigInt(decimalPlaces);
 	// Use the logic from `multiplyFloating` to get an exact scaled value
-	// before rounding, avoiding the precision loss of `multiply`.
+	// before rounding, avoiding the precision loss of the of the fixed-point `multiply` function.
 	const scaledBigInt = bd.bigint * powerOfTen;
 	const scaledDivex = bd.divex;
 	const scaledBd = { bigint: scaledBigInt, divex: scaledDivex };
