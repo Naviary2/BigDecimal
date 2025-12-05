@@ -10,8 +10,15 @@
     "README.md",
     "LICENSE"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "lint": "eslint src tests",
@@ -58,6 +65,7 @@
     "eslint-config-prettier": "^10.1.8",
     "mitata": "^1.0.34",
     "prettier": "^3.7.3",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.3"
