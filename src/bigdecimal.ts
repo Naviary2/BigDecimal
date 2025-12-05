@@ -108,7 +108,7 @@ export function fromNumber(num: number, precision: number = DEFAULT_WORKING_PREC
 	const rawBD = _fromNumberBits(num)!;
 
 	// Adjust to the target precision.
-	setExponent(rawBD, precision);
+	setPrecision(rawBD, precision);
 
 	return rawBD;
 }
@@ -945,7 +945,7 @@ export function clone(bd: BigDecimal): BigDecimal {
  * @param bd - The BigDecimal to modify.
  * @param precision The target precision in bits.
  */
-export function setExponent(bd: BigDecimal, precision: number): void {
+export function setPrecision(bd: BigDecimal, precision: number): void {
 	const difference = bd.divex - precision;
 
 	// If there's no change, do nothing.
@@ -974,8 +974,8 @@ export function setExponent(bd: BigDecimal, precision: number): void {
  * Modifies the BigDecimal to have the global default working precision.
  * @param bd - The BigDecimal to modify.
  */
-export function fixPrecision(bd: BigDecimal): void {
-	setExponent(bd, DEFAULT_WORKING_PRECISION);
+export function resetPrecision(bd: BigDecimal): void {
+	setPrecision(bd, DEFAULT_WORKING_PRECISION);
 }
 
 /**
@@ -1178,7 +1178,6 @@ export default {
 	divide,
 	divideFloating,
 	mod,
-	powerInt,
 	pow,
 	sqrt,
 	hypot,
@@ -1200,8 +1199,8 @@ export default {
 	isZero,
 	// Utility
 	clone,
-	setExponent,
-	fixPrecision,
+	setPrecision,
+	resetPrecision,
 	hasDefaultPrecision,
 	// Conversion
 	toNumber,

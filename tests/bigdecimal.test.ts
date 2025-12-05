@@ -27,12 +27,11 @@ import BD, {
 	mod,
 	sqrt,
 	pow,
-	powerInt,
 	hypot,
 	abs,
 	clone,
-	setExponent,
-	fixPrecision,
+	setPrecision,
+	resetPrecision,
 	compare,
 	areEqual,
 	isZero,
@@ -566,29 +565,69 @@ describe('G. Additional useful tests', () => {
 		});
 	});
 
-	describe('powerInt', () => {
-		it('powerInt for small positive exponent', () => {
+	describe('pow', () => {
+		it('handles small positive integer exponent', () => {
 			const base: BigDecimal = fromBigInt(2n, 10);
-			const result = powerInt(base, 3);
+			// This will use the fast powerInt path
+			const result = pow(base, 3);
 			expect(toNumber(result)).toBeCloseTo(8, 5);
 		});
 
-		it('powerInt for exponent 0', () => {
+		it('handles exponent of 0', () => {
 			const base: BigDecimal = fromBigInt(5n, 10);
-			const result = powerInt(base, 0);
+			const result = pow(base, 0);
 			expect(toNumber(result)).toBeCloseTo(1, 5);
 		});
 
-		it('powerInt for exponent 1', () => {
+		it('handles exponent of 1', () => {
 			const base: BigDecimal = fromBigInt(7n, 10);
-			const result = powerInt(base, 1);
-			expect(toNumber(result)).toBeCloseTo(7, 5);
+			const result = pow(base, 1);
+			expect(areEqual(base, result)).toBe(true);
 		});
 
-		it('powerInt for negative exponent', () => {
+		it('handles negative integer exponent', () => {
 			const base: BigDecimal = fromBigInt(2n, 10);
-			const result = powerInt(base, -2);
+			// This will use the fast powerInt path with a reciprocal
+			const result = pow(base, -2);
 			expect(toNumber(result)).toBeCloseTo(0.25, 3);
+		});
+
+		it('handles fractional base with integer exponent', () => {
+			// (0.5)^2 = 0.25
+			const base: BigDecimal = fromNumber(0.5, 30);
+			const result = pow(base, 2); // Still uses fast path
+			expect(toNumber(result)).toBeCloseTo(0.25, 5);
+		});
+
+		it('handles integer base with fractional exponent', () => {
+			// 2^0.5 = sqrt(2)
+			const base: BigDecimal = fromBigInt(2n, 30);
+			// This triggers the ln/exp path
+			const result = pow(base, 0.5);
+			expect(toNumber(result)).toBeCloseTo(Math.SQRT2, 5);
+		});
+
+		it('handles fractional base with fractional exponent', () => {
+			// (0.25)^0.5 = 0.5
+			const base: BigDecimal = fromNumber(0.25, 30);
+			const result = pow(base, 0.5);
+			expect(toNumber(result)).toBeCloseTo(0.5, 5);
+		});
+
+		it('throws error for negative base with non-integer exponent', () => {
+			const base: BigDecimal = fromBigInt(-4n, 30);
+			// This should result in a complex number, which is unsupported.
+			expect(() => pow(base, 0.5)).toThrow();
+		});
+
+		it('handles base of 0 correctly', () => {
+			const zero = fromBigInt(0n, 20);
+			// 0^positive = 0
+			expect(isZero(pow(zero, 2))).toBe(true);
+			// 0^0 = 1
+			expect(toNumber(pow(zero, 0))).toBe(1);
+			// 0^negative = undefined (throws)
+			expect(() => pow(zero, -2)).toThrow();
 		});
 	});
 
@@ -835,24 +874,24 @@ describe('G. Additional useful tests', () => {
 		});
 	});
 
-	describe('setExponent and fixPrecision', () => {
-		it('setExponent increases precision', () => {
+	describe('setPrecision and resetPrecision', () => {
+		it('setPrecision increases precision', () => {
 			const bd: BigDecimal = { bigint: 2n, divex: 2 }; // 0.5
-			setExponent(bd, 4);
+			setPrecision(bd, 4);
 			expect(bd.divex).toBe(4);
 			expect(toNumber(bd)).toBeCloseTo(0.5, 10);
 		});
 
-		it('setExponent decreases precision with rounding', () => {
+		it('setPrecision decreases precision with rounding', () => {
 			const bd: BigDecimal = { bigint: 5n, divex: 4 }; // 0.3125
-			setExponent(bd, 2);
+			setPrecision(bd, 2);
 			expect(bd.divex).toBe(2);
 			// Result should be rounded
 		});
 
-		it('fixPrecision sets to default precision', () => {
+		it('resetPrecision sets to default precision', () => {
 			const bd: BigDecimal = { bigint: 1n, divex: 5 };
-			fixPrecision(bd);
+			resetPrecision(bd);
 			expect(hasDefaultPrecision(bd)).toBe(true);
 		});
 	});
@@ -985,7 +1024,7 @@ describe('H. Global Precision Configuration', () => {
 		expect(bd.divex).toBe(10);
 	});
 
-	it('fixPrecision updates a BigDecimal to the NEW global precision', () => {
+	it('resetPrecision updates a BigDecimal to the NEW global precision', () => {
 		// Create a BD with arbitrary precision
 		const bd = BD.fromBigInt(1n, 5);
 		expect(bd.divex).toBe(5);
@@ -994,7 +1033,7 @@ describe('H. Global Precision Configuration', () => {
 		BD.setDefaultPrecision(32);
 
 		// Apply fix
-		BD.fixPrecision(bd);
+		BD.resetPrecision(bd);
 
 		expect(bd.divex).toBe(32);
 	});

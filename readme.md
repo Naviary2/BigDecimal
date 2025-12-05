@@ -90,8 +90,8 @@ All methods do not modify the input arguments, returning a new BigDecimal, unles
 | `isZero(x)`              | Returns `true` if the value is zero.                                                                                                                                  |
 | **Utility**              |                                                                                                                                                                       |
 | `clone(x)`               | Returns a duplicate of the BigDecimal.                                                                                                                                |
-| `setExponent(x, exp)`    | Mutates the given BigDecimal with a new precision level.                                                                                                              |
-| `fixPrecision(x)`        | Resets the precision of the BigDecimal to the default. Mutates the original BigDecimal.                                                                               |
+| `setPrecision(x, exp)`   | Mutates the given BigDecimal with a new precision level.                                                                                                              |
+| `resetPrecision(x)`      | Resets the precision of the BigDecimal to the default. Mutates the original BigDecimal.                                                                               |
 | `hasDefaultPrecision(x)` | Returns `true` if the value has the default precision.                                                                                                                |
 | **Conversion**           |                                                                                                                                                                       |
 | `toNumber(x)`            | Converts to a standard JavaScript number. May overflow to Infinity, underflow to zero, or lose precision.                                                             |
