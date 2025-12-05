@@ -33,12 +33,12 @@ npm i @naviary/bigdecimal
 This library uses a functional API for optimal performance. Instead of creating class instances with `new`, you import functions to manipulate `BigDecimal` objects.
 
 ```typescript
-import { FromBigInt, FromNumber, add, toExactString } from '@naviary/bigdecimal';
+import { fromBigInt, fromNumber, add, toExactString } from '@naviary/bigdecimal';
 
 // Variable requiring precision at high magnitudes.
 // Default precision level is used if not specified.
-let position = FromBigInt(10n ** 200n);
-const velocity = FromNumber(0.25);
+let position = fromBigInt(10n ** 200n);
+const velocity = fromNumber(0.25);
 
 // Increment position.
 // The result has as much decimal precision as the first argument.
@@ -54,50 +54,50 @@ A good rule of thumb is all functions that accept two BigDecimals as input, will
 
 All methods do not modify the input arguments, returning a new BigDecimal, unless otherwise stated, below.
 
-| Function                  | Description                                                                                                                                                           |
-| :------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Config**                |                                                                                                                                                                       |
-| `SetGlobalPrecision(x)`   | Sets the default number of bits of precision dedicated towards the decimal portion of BigDecimals. Default: 23 bits (~7 decimal digits)                               |
-| **Creation**              |                                                                                                                                                                       |
-| `FromNumber(n)`           | Creates a BigDecimal from a JavaScript number.                                                                                                                        |
-| `FromBigInt(n)`           | Creates a BigDecimal from a native BigInt.                                                                                                                            |
-| **Arithmetic**            |                                                                                                                                                                       |
-| `add(a, b)`               | Adds two BigDecimals, maintaining the precision of the first argument.                                                                                                |
-| `subtract(a, b)`          | Subtracts `b` from `a`, maintaining the precision of `a`.                                                                                                             |
-| `multiply_fixed(a, b)`    | Multiplies maintaining precision of the first argument.                                                                                                               |
-| `multiply_floating(a, b)` | Multiplies and shifts the decimal point to normalize the mantissa, minimicking a floating point operation.                                                            |
-| `divide_fixed(a, b)`      | Divides `a` by `b` maintaining precision of the first argument.                                                                                                       |
-| `divide_floating(a, b)`   | Divides `a` by `b` and shifts the decimal point to normalize the mantissa, minimicking a floating point operation.                                                    |
-| `mod(a, b)`               | Calculates the remainder of `a` divided by `b` (modulo)                                                                                                               |
-| `pow(base, exp)`          | Raises `base` to the power of `exp` and shifts the decimal point to normalize the mantissa, minimicking a floating point operation.                                   |
-| `sqrt(x)`                 | Calculates the square root of `x` and shifts the decimal point to normalize the mantissa, minimicking a floating point operation.                                     |
-| `hypot(x, y)`             | Calculates the hypotenuse of a right triangle with given side lengths and shifts the decimal point to normalize the mantissa, minimicking a floating point operation. |
-| `log10(x)`                | Calculates the base-10 logarithm of the value.                                                                                                                        |
-| `ln(x)`                   | Calculates the natural logarithm of the value.                                                                                                                        |
-| `exp(x)`                  | Calculates the exponential function e^x of the value.                                                                                                                 |
-| `abs(x)`                  | Returns the absolute value.                                                                                                                                           |
-| `negate(x)`               | Returns the value with its sign inverted.                                                                                                                             |
-| `min(a, b)`               | Returns the smaller of the two values. Returns one of the input arguments.                                                                                            |
-| `max(a, b)`               | Returns the larger of the two values. Returns one of the input arguments.                                                                                             |
-| `clamp(x, a, b)`          | Clamps the BigDecimal between two values. Returns one of the input arguments.                                                                                         |
-| `round(x)`                | Rounds the BigDecimal to the nearest integer.                                                                                                                         |
-| `floor(x)`                | Returns the largest integer that is smaller than the value.                                                                                                           |
-| `ceil(x)`                 | Returns the smallest integer that is greater than the value.                                                                                                          |
-| **Comparison**            |                                                                                                                                                                       |
-| `compare(a, b)`           | Returns `-1` if a < b, `0` if equal, `1` if a > b.                                                                                                                    |
-| `areEqual(a, b)`          | Returns `true` if values are numerically equal. (Differing precisions doesn't matter)                                                                                 |
-| `isInteger(x)`            | Returns `true` if the value has no fractional part.                                                                                                                   |
-| `isZero(x)`               | Returns `true` if the value is zero.                                                                                                                                  |
-| **Utility**               |                                                                                                                                                                       |
-| `clone(x)`                | Returns a duplicate of the BigDecimal.                                                                                                                                |
-| `setExponent(x, exp)`     | Mutates the given BigDecimal with a new precision level.                                                                                                              |
-| `fixPrecision(x)`         | Resets the precision of the BigDecimal to the default. Mutates the original BigDecimal.                                                                               |
-| `hasDefaultPrecision(x)`  | Returns `true` if the value has the default precision.                                                                                                                |
-| **Conversion**            |                                                                                                                                                                       |
-| `toNumber(x)`             | Converts to a standard JavaScript number. May overflow to Infinity, underflow to zero, or lose precision.                                                             |
-| `toBigInt(x)`             | Converts to a BigInt, rounding to the nearest integer.                                                                                                                |
-| `toExactString(x)`        | Returns the full, precise decimal string.                                                                                                                             |
-| `toApproximateString(x)`  | Returns a rounded decimal string, trimming extraneous digits that give an illusion of precision.                                                                      |
+| Function                 | Description                                                                                                                                                           |
+| :----------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Config**               |                                                                                                                                                                       |
+| `setDefaultPrecision(x)` | Sets the default number of bits of precision dedicated towards the decimal portion of BigDecimals. Default: 23 bits (~7 decimal digits)                               |
+| **Creation**             |                                                                                                                                                                       |
+| `fromNumber(n)`          | Creates a BigDecimal from a JavaScript number.                                                                                                                        |
+| `fromBigInt(n)`          | Creates a BigDecimal from a native BigInt.                                                                                                                            |
+| **Arithmetic**           |                                                                                                                                                                       |
+| `add(a, b)`              | Adds two BigDecimals, maintaining the precision of the first argument.                                                                                                |
+| `subtract(a, b)`         | Subtracts `b` from `a`, maintaining the precision of `a`.                                                                                                             |
+| `multiply(a, b)`         | Multiplies maintaining precision of the first argument.                                                                                                               |
+| `multiplyFloating(a, b)` | Multiplies and shifts the decimal point to normalize the mantissa, minimicking a floating point operation.                                                            |
+| `divide(a, b)`           | Divides `a` by `b` maintaining precision of the first argument.                                                                                                       |
+| `divideFloating(a, b)`   | Divides `a` by `b` and shifts the decimal point to normalize the mantissa, minimicking a floating point operation.                                                    |
+| `mod(a, b)`              | Calculates the remainder of `a` divided by `b` (modulo)                                                                                                               |
+| `pow(base, exp)`         | Raises `base` to the power of `exp` and shifts the decimal point to normalize the mantissa, minimicking a floating point operation.                                   |
+| `sqrt(x)`                | Calculates the square root of `x` and shifts the decimal point to normalize the mantissa, minimicking a floating point operation.                                     |
+| `hypot(x, y)`            | Calculates the hypotenuse of a right triangle with given side lengths and shifts the decimal point to normalize the mantissa, minimicking a floating point operation. |
+| `log10(x)`               | Calculates the base-10 logarithm of the value.                                                                                                                        |
+| `ln(x)`                  | Calculates the natural logarithm of the value.                                                                                                                        |
+| `exp(x)`                 | Calculates the exponential function e^x of the value.                                                                                                                 |
+| `abs(x)`                 | Returns the absolute value.                                                                                                                                           |
+| `negate(x)`              | Returns the value with its sign inverted.                                                                                                                             |
+| `min(a, b)`              | Returns the smaller of the two values. Returns one of the input arguments.                                                                                            |
+| `max(a, b)`              | Returns the larger of the two values. Returns one of the input arguments.                                                                                             |
+| `clamp(x, a, b)`         | Clamps the BigDecimal between two values. Returns one of the input arguments.                                                                                         |
+| `round(x)`               | Rounds the BigDecimal to the nearest integer.                                                                                                                         |
+| `floor(x)`               | Returns the largest integer that is smaller than the value.                                                                                                           |
+| `ceil(x)`                | Returns the smallest integer that is greater than the value.                                                                                                          |
+| **Comparison**           |                                                                                                                                                                       |
+| `compare(a, b)`          | Returns `-1` if a < b, `0` if equal, `1` if a > b.                                                                                                                    |
+| `areEqual(a, b)`         | Returns `true` if values are numerically equal. (Differing precisions doesn't matter)                                                                                 |
+| `isInteger(x)`           | Returns `true` if the value has no fractional part.                                                                                                                   |
+| `isZero(x)`              | Returns `true` if the value is zero.                                                                                                                                  |
+| **Utility**              |                                                                                                                                                                       |
+| `clone(x)`               | Returns a duplicate of the BigDecimal.                                                                                                                                |
+| `setExponent(x, exp)`    | Mutates the given BigDecimal with a new precision level.                                                                                                              |
+| `fixPrecision(x)`        | Resets the precision of the BigDecimal to the default. Mutates the original BigDecimal.                                                                               |
+| `hasDefaultPrecision(x)` | Returns `true` if the value has the default precision.                                                                                                                |
+| **Conversion**           |                                                                                                                                                                       |
+| `toNumber(x)`            | Converts to a standard JavaScript number. May overflow to Infinity, underflow to zero, or lose precision.                                                             |
+| `toBigInt(x)`            | Converts to a BigInt, rounding to the nearest integer.                                                                                                                |
+| `toExactString(x)`       | Returns the full, precise decimal string.                                                                                                                             |
+| `toApproximateString(x)` | Returns a rounded decimal string, trimming extraneous digits that give an illusion of precision.                                                                      |
 
 ## Benchmarks
 

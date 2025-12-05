@@ -76,7 +76,7 @@ const TEN: bigint = 10n;
  * Sets the default number of bits of precision to use in all BigDecimal calculations where a specific precision is not requested. DEFAULT: 23 bits (~7 decimal digits).
  * @param precision - The number of bits of precision dedicated to the decimal portion.
  */
-export function SetGlobalPrecision(precision: number): void {
+export function setDefaultPrecision(precision: number): void {
 	if (precision < 0)
 		throw new Error(`Precision must be greater than zero. Received: ${precision}`);
 
@@ -95,7 +95,7 @@ export function SetGlobalPrecision(precision: number): void {
  * @param [precision] The target precision for the BigDecimal.
  * @returns A new BigDecimal with the value from the number.
  */
-export function FromNumber(num: number, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
+export function fromNumber(num: number, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
 	if (precision < 0)
 		throw new Error(`Precision must be greater than zero. Received: ${precision}`);
 	if (!isFinite(num))
@@ -162,7 +162,7 @@ function _fromNumberBits(num: number): BigDecimal | null {
  * @param [precision] The target precision for the BigDecimal.
  * @returns A new BigDecimal with the value from the bigint.
  */
-export function FromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
+export function fromBigInt(num: bigint, precision: number = DEFAULT_WORKING_PRECISION): BigDecimal {
 	if (precision < 0)
 		throw new Error(`Precision must be greater than zero. Received: ${precision}`);
 	return {
@@ -266,7 +266,7 @@ export function subtract(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
  * @param bd2 The second factor.
  * @returns The product of bd1 and bd2.
  */
-export function multiply_fixed(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
+export function multiply(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
 	// The true divex of the raw product is (bd1.divex + bd2.divex).
 	// Shift the raw product to scale it to the targetDivex (bd1.divex).
 	// The total shift is therefore is bd2.divex.
@@ -307,7 +307,7 @@ export function multiply_fixed(bd1: BigDecimal, bd2: BigDecimal): BigDecimal {
  * @param [mantissaBits] How many bits the result's mantissa should have.
  * @returns The product of bd1 and bd2.
  */
-export function multiply_floating(
+export function multiplyFloating(
 	bd1: BigDecimal,
 	bd2: BigDecimal,
 	mantissaBits?: number,
@@ -330,7 +330,7 @@ export function multiply_floating(
  * @param [workingPrecision] Extra bits for internal calculation to prevent rounding errors.
  * @returns The quotient of bd1 and bd2 (bd1 / bd2), with the same precision as the dividend.
  */
-export function divide_fixed(
+export function divide(
 	bd1: BigDecimal,
 	bd2: BigDecimal,
 	workingPrecision: number = DEFAULT_WORKING_PRECISION,
@@ -373,7 +373,7 @@ export function divide_fixed(
  * @param [mantissaBits] How many bits of mantissa to preserve in the result.
  * @returns The quotient of bd1 and bd2 (bd1 / bd2).
  */
-export function divide_floating(
+export function divideFloating(
 	bd1: BigDecimal,
 	bd2: BigDecimal,
 	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
@@ -457,20 +457,20 @@ export function powerInt(base: BigDecimal, exp: number): BigDecimal {
 
 	// Handle negative exponents by inverting the base: base^-n = (1/base)^n
 	if (exp < 0) {
-		const ONE = FromBigInt(1n);
+		const ONE = fromBigInt(1n);
 		// Use floating-point division for a precise reciprocal
-		const invertedBase = divide_floating(ONE, base);
+		const invertedBase = divideFloating(ONE, base);
 		return powerInt(invertedBase, -exp);
 	}
 
-	let res = FromBigInt(1n); // Start with the identity element for multiplication
+	let res = fromBigInt(1n); // Start with the identity element for multiplication
 	let currentPower = base; // Start with base^1
 
 	while (exp > 0) {
 		// If the last bit of exp is 1, we need to multiply by the current power of the base.
-		if (exp % 2 === 1) res = multiply_floating(res, currentPower);
+		if (exp % 2 === 1) res = multiplyFloating(res, currentPower);
 		// Square the current power of the base for the next iteration (e.g., x -> x^2 -> x^4 -> x^8).
-		currentPower = multiply_floating(currentPower, currentPower);
+		currentPower = multiplyFloating(currentPower, currentPower);
 		// Integer division by 2 is equivalent to a right bit shift.
 		exp = Math.floor(exp / 2);
 	}
@@ -503,7 +503,7 @@ export function pow(
 		if (exponent > 0) return { bigint: ZERO, divex: mantissaBits }; // 0^positive = 0
 		if (exponent < 0)
 			throw new Error('0 raised to a negative power is undefined (division by zero).');
-		return FromBigInt(ONE, mantissaBits); // 0^0 is conventionally 1
+		return fromBigInt(ONE, mantissaBits); // 0^0 is conventionally 1
 	}
 	// If the exponent is an integer, use the more efficient integer power function.
 	if (Number.isInteger(exponent)) return powerInt(base, exponent);
@@ -515,7 +515,7 @@ export function pow(
 	const product = exponent * logOfBase;
 
 	// Convert the resulting number back to a BigDecimal to be used in exp().
-	const productBD = FromNumber(product, mantissaBits);
+	const productBD = fromNumber(product, mantissaBits);
 
 	// Calculate the final result: e^(product)
 	return exp(productBD, mantissaBits);
@@ -554,7 +554,7 @@ export function sqrt(
 	const MAX_ITERATIONS = 100; // Limit iterations to prevent infinite loops in case of non-convergence.
 	for (let i = 0; i < MAX_ITERATIONS; i++) {
 		// Calculate `n / x_k` using high-precision floating division
-		const n_div_xk = divide_floating(bd, x_k, mantissaBits * 2);
+		const n_div_xk = divideFloating(bd, x_k, mantissaBits * 2);
 		// Calculate `x_k + (n / x_k)`
 		const sum = add(n_div_xk, x_k); // n_div_xk is FIRST since it has more precision, so the sum will match that precision!
 		// Divide by 2: `(sum) / 2`. A right shift is equivalent to division by 2.
@@ -585,8 +585,8 @@ export function hypot(
 	mantissaBits: number = DEFAULT_MANTISSA_PRECISION_BITS,
 ): BigDecimal {
 	// Square the inputs
-	const bd1_squared = multiply_fixed(bd1, bd1);
-	const bd2_squared = multiply_fixed(bd2, bd2);
+	const bd1_squared = multiply(bd1, bd1);
+	const bd2_squared = multiply(bd2, bd2);
 
 	// Add the squares together.
 	const sum_of_squares: BigDecimal = add(bd1_squared, bd2_squared);
@@ -637,13 +637,13 @@ export function exp(
 	// Argument Reduction:
 	// We use the identity: e^x = e^(y + k*ln(2)) = (e^y) * 2^k
 	// First, find k = round(bd / ln(2))
-	const LN2 = FromNumber(Math.LN2);
-	const bd_div_ln2 = divide_floating(bd, LN2, mantissaBits);
+	const LN2 = fromNumber(Math.LN2);
+	const bd_div_ln2 = divideFloating(bd, LN2, mantissaBits);
 	const k = toBigInt(bd_div_ln2);
 
 	// Now, find y = bd - k * ln(2). This `y` will be small.
-	const k_bd = FromBigInt(k, mantissaBits);
-	const k_ln2 = multiply_floating(k_bd, LN2, mantissaBits);
+	const k_bd = fromBigInt(k, mantissaBits);
+	const k_ln2 = multiplyFloating(k_bd, LN2, mantissaBits);
 	const y = subtract(bd, k_ln2);
 
 	// Taylor Series for e^y:
@@ -652,18 +652,18 @@ export function exp(
 	// We can compute this iteratively: term_n = term_{n-1} * (y / n)
 
 	// Initialize sum and the first term (y^0 / 0! = 1)
-	let sum = FromBigInt(1n, mantissaBits);
+	let sum = fromBigInt(1n, mantissaBits);
 	let term = clone(sum);
-	let lastSum = FromBigInt(0n, mantissaBits);
+	let lastSum = fromBigInt(0n, mantissaBits);
 
 	const MAX_ITERATIONS = 100n; // Safety break
 
 	for (let n = 1n; n <= MAX_ITERATIONS; n++) {
-		const n_bd = FromBigInt(n, mantissaBits);
+		const n_bd = fromBigInt(n, mantissaBits);
 
 		// Calculate the next term: term = term * (y / n)
-		const y_div_n = divide_floating(y, n_bd, mantissaBits);
-		term = multiply_floating(term, y_div_n, mantissaBits);
+		const y_div_n = divideFloating(y, n_bd, mantissaBits);
+		term = multiplyFloating(term, y_div_n, mantissaBits);
 
 		// Add the new term to the sum.
 		sum = add(sum, term);
@@ -749,7 +749,7 @@ export function clamp(bd: BigDecimal, min: BigDecimal, max: BigDecimal): BigDeci
 export function round(bd: BigDecimal): BigDecimal {
 	const bigintRounded = toBigInt(bd);
 	// Create a new BigDecimal with the rounded bigint and the same divex as the input.
-	return FromBigInt(bigintRounded, bd.divex);
+	return fromBigInt(bigintRounded, bd.divex);
 }
 
 /**
@@ -1116,8 +1116,8 @@ export function toApproximateString(bd: BigDecimal): string {
 	// Round to the target decimal places.
 	// The logic is: multiply by 10^P, round, then format back to a string.
 	const powerOfTen = TEN ** BigInt(decimalPlaces);
-	// Use the logic from `multiply_floating` to get an exact scaled value
-	// before rounding, avoiding the precision loss of `multiply_fixed`.
+	// Use the logic from `multiplyFloating` to get an exact scaled value
+	// before rounding, avoiding the precision loss of `multiply`.
 	const scaledBigInt = bd.bigint * powerOfTen;
 	const scaledDivex = bd.divex;
 	const scaledBd = { bigint: scaledBigInt, divex: scaledDivex };
@@ -1166,17 +1166,17 @@ function getEffectiveDecimalPlaces(bd: BigDecimal): number {
 
 export default {
 	// Config
-	SetGlobalPrecision,
+	setDefaultPrecision,
 	// Constructors
-	FromNumber,
-	FromBigInt,
+	fromNumber,
+	fromBigInt,
 	// Arithmetic
 	add,
 	subtract,
-	multiply_fixed,
-	multiply_floating,
-	divide_fixed,
-	divide_floating,
+	multiply,
+	multiplyFloating,
+	divide,
+	divideFloating,
 	mod,
 	powerInt,
 	pow,

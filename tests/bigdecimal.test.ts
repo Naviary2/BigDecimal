@@ -16,14 +16,14 @@
 
 import { describe, it, expect, afterEach } from 'vitest';
 import BD, {
-	FromNumber,
-	FromBigInt,
+	fromNumber,
+	fromBigInt,
 	add,
 	subtract,
-	multiply_fixed,
-	multiply_floating,
-	divide_fixed,
-	divide_floating,
+	multiply,
+	multiplyFloating,
+	divide,
+	divideFloating,
 	mod,
 	sqrt,
 	pow,
@@ -64,8 +64,8 @@ const bitLength = bimath.bitLength_bisection;
 // ============================================================================
 describe('A. Integer arithmetic correctness', () => {
 	it('add produces exact integer result', () => {
-		const a: BigDecimal = FromBigInt(5n, 10);
-		const b: BigDecimal = FromBigInt(3n, 10);
+		const a: BigDecimal = fromBigInt(5n, 10);
+		const b: BigDecimal = fromBigInt(3n, 10);
 		const result = add(a, b);
 
 		expect(toExactString(result)).toBe('8');
@@ -74,8 +74,8 @@ describe('A. Integer arithmetic correctness', () => {
 	});
 
 	it('subtract produces exact integer result', () => {
-		const a: BigDecimal = FromBigInt(10n, 10);
-		const b: BigDecimal = FromBigInt(4n, 10);
+		const a: BigDecimal = fromBigInt(10n, 10);
+		const b: BigDecimal = fromBigInt(4n, 10);
 		const result = subtract(a, b);
 
 		expect(toExactString(result)).toBe('6');
@@ -83,20 +83,20 @@ describe('A. Integer arithmetic correctness', () => {
 		expect(toBigInt(result)).toBe(6n);
 	});
 
-	it('multiply_fixed produces exact integer result', () => {
-		const a: BigDecimal = FromBigInt(6n, 10);
-		const b: BigDecimal = FromBigInt(7n, 10);
-		const result = multiply_fixed(a, b);
+	it('multiply produces exact integer result', () => {
+		const a: BigDecimal = fromBigInt(6n, 10);
+		const b: BigDecimal = fromBigInt(7n, 10);
+		const result = multiply(a, b);
 
 		expect(toExactString(result)).toBe('42');
 		expect(result.divex).toBe(a.divex);
 		expect(toBigInt(result)).toBe(42n);
 	});
 
-	it('divide_fixed produces exact integer when divisor divides evenly', () => {
-		const a: BigDecimal = FromBigInt(20n, 10);
-		const b: BigDecimal = FromBigInt(4n, 10);
-		const result = divide_fixed(a, b);
+	it('divide produces exact integer when divisor divides evenly', () => {
+		const a: BigDecimal = fromBigInt(20n, 10);
+		const b: BigDecimal = fromBigInt(4n, 10);
+		const result = divide(a, b);
 
 		expect(toExactString(result)).toBe('5');
 		expect(result.divex).toBe(a.divex);
@@ -104,13 +104,13 @@ describe('A. Integer arithmetic correctness', () => {
 	});
 
 	it('toBigInt on integer BigDecimal yields expected bigint', () => {
-		const a: BigDecimal = FromBigInt(123n, 10);
+		const a: BigDecimal = fromBigInt(123n, 10);
 		expect(toBigInt(a)).toBe(123n);
 	});
 
 	it('handles negative integers correctly', () => {
-		const a: BigDecimal = FromBigInt(-8n, 10);
-		const b: BigDecimal = FromBigInt(3n, 10);
+		const a: BigDecimal = fromBigInt(-8n, 10);
+		const b: BigDecimal = fromBigInt(3n, 10);
 		const result = add(a, b);
 
 		expect(toExactString(result)).toBe('-5');
@@ -139,8 +139,8 @@ describe('B. Perfect dyadic rational representation', () => {
 	it('3/8 * 2 === 3/4', () => {
 		// 3/8 = { bigint: 3n, divex: 3 }
 		const threeEighths: BigDecimal = { bigint: 3n, divex: 3 }; // 0.375
-		const two: BigDecimal = FromBigInt(2n, 3);
-		const result = multiply_fixed(threeEighths, two);
+		const two: BigDecimal = fromBigInt(2n, 3);
+		const result = multiply(threeEighths, two);
 
 		expect(toExactString(result)).toBe('0.75');
 		const expected: BigDecimal = { bigint: 6n, divex: 3 }; // 0.75 = 6/8
@@ -229,8 +229,8 @@ describe('C. Differing divex arguments', () => {
 // ============================================================================
 describe('D. Methods preserving first-argument divex', () => {
 	const precision = 10;
-	const bd1: BigDecimal = FromBigInt(10n, precision);
-	const bd2: BigDecimal = FromBigInt(3n, precision);
+	const bd1: BigDecimal = fromBigInt(10n, precision);
+	const bd2: BigDecimal = fromBigInt(3n, precision);
 
 	it('add preserves first argument divex', () => {
 		const result = add(bd1, bd2);
@@ -242,13 +242,13 @@ describe('D. Methods preserving first-argument divex', () => {
 		expect(result.divex).toBe(bd1.divex);
 	});
 
-	it('multiply_fixed preserves first argument divex', () => {
-		const result = multiply_fixed(bd1, bd2);
+	it('multiply preserves first argument divex', () => {
+		const result = multiply(bd1, bd2);
 		expect(result.divex).toBe(bd1.divex);
 	});
 
-	it('divide_fixed preserves first argument divex', () => {
-		const result = divide_fixed(bd1, bd2);
+	it('divide preserves first argument divex', () => {
+		const result = divide(bd1, bd2);
 		expect(result.divex).toBe(bd1.divex);
 	});
 
@@ -275,7 +275,7 @@ describe('D. Methods preserving first-argument divex', () => {
 	});
 
 	it('abs preserves input divex', () => {
-		const neg: BigDecimal = FromBigInt(-5n, precision);
+		const neg: BigDecimal = fromBigInt(-5n, precision);
 		const result = abs(neg);
 		expect(result.divex).toBe(neg.divex);
 	});
@@ -292,32 +292,32 @@ describe('D. Methods preserving first-argument divex', () => {
 describe('E. Floating-point normalization & mantissa size', () => {
 	const mantissaBits = 24;
 
-	it('multiply_floating respects mantissaBits', () => {
-		const a: BigDecimal = FromBigInt(123456n, 20);
-		const b: BigDecimal = FromBigInt(654321n, 20);
-		const result = multiply_floating(a, b, mantissaBits);
+	it('multiplyFloating respects mantissaBits', () => {
+		const a: BigDecimal = fromBigInt(123456n, 20);
+		const b: BigDecimal = fromBigInt(654321n, 20);
+		const result = multiplyFloating(a, b, mantissaBits);
 
 		expect(bitLength(result.bigint)).toBeLessThanOrEqual(mantissaBits);
 		expect(result.bigint).not.toBe(0n);
 		expect(Number.isFinite(result.divex)).toBe(true);
 	});
 
-	it('multiply_floating is idempotent when normalized', () => {
-		const a: BigDecimal = FromBigInt(100n, 10);
-		const b: BigDecimal = FromBigInt(200n, 10);
-		const result = multiply_floating(a, b, mantissaBits);
+	it('multiplyFloating is idempotent when normalized', () => {
+		const a: BigDecimal = fromBigInt(100n, 10);
+		const b: BigDecimal = fromBigInt(200n, 10);
+		const result = multiplyFloating(a, b, mantissaBits);
 
 		// Multiplying again by 1 should give equivalent result
-		const one: BigDecimal = FromBigInt(1n, mantissaBits);
-		const normalized = multiply_floating(result, one, mantissaBits);
+		const one: BigDecimal = fromBigInt(1n, mantissaBits);
+		const normalized = multiplyFloating(result, one, mantissaBits);
 
 		expect(areEqual(result, normalized)).toBe(true);
 	});
 
-	it('divide_floating respects mantissaBits', () => {
-		const a: BigDecimal = FromBigInt(1000000n, 20);
-		const b: BigDecimal = FromBigInt(7n, 20);
-		const result = divide_floating(a, b, mantissaBits);
+	it('divideFloating respects mantissaBits', () => {
+		const a: BigDecimal = fromBigInt(1000000n, 20);
+		const b: BigDecimal = fromBigInt(7n, 20);
+		const result = divideFloating(a, b, mantissaBits);
 
 		expect(bitLength(result.bigint)).toBeLessThanOrEqual(mantissaBits);
 		expect(result.bigint).not.toBe(0n);
@@ -325,7 +325,7 @@ describe('E. Floating-point normalization & mantissa size', () => {
 	});
 
 	it('sqrt respects mantissaBits', () => {
-		const bd: BigDecimal = FromBigInt(2n, 20);
+		const bd: BigDecimal = fromBigInt(2n, 20);
 		const result = sqrt(bd, mantissaBits);
 
 		expect(bitLength(result.bigint)).toBeLessThanOrEqual(mantissaBits);
@@ -334,7 +334,7 @@ describe('E. Floating-point normalization & mantissa size', () => {
 	});
 
 	it('exp respects mantissaBits (approximately)', () => {
-		const bd: BigDecimal = FromNumber(1, mantissaBits);
+		const bd: BigDecimal = fromNumber(1, mantissaBits);
 		const result = exp(bd, mantissaBits);
 
 		// exp may produce slightly more bits due to argument reduction and Taylor series
@@ -345,7 +345,7 @@ describe('E. Floating-point normalization & mantissa size', () => {
 	});
 
 	it('pow respects mantissaBits', () => {
-		const base: BigDecimal = FromNumber(2, mantissaBits);
+		const base: BigDecimal = fromNumber(2, mantissaBits);
 		const result = pow(base, 0.5, mantissaBits); // sqrt(2)
 
 		expect(bitLength(result.bigint)).toBeLessThanOrEqual(mantissaBits);
@@ -354,8 +354,8 @@ describe('E. Floating-point normalization & mantissa size', () => {
 	});
 
 	it('non-zero input produces non-zero output', () => {
-		const bd: BigDecimal = FromBigInt(1n, 50);
-		const result = multiply_floating(bd, bd, mantissaBits);
+		const bd: BigDecimal = fromBigInt(1n, 50);
+		const result = multiplyFloating(bd, bd, mantissaBits);
 
 		expect(result.bigint).not.toBe(0n);
 	});
@@ -398,11 +398,11 @@ describe('F. Rounding direction for non-representable results', () => {
 	});
 
 	describe('Division with rounding', () => {
-		it('divide_fixed with non-exact result rounds correctly (positive)', () => {
+		it('divide with non-exact result rounds correctly (positive)', () => {
 			// 10 / 3 = 3.333...
-			const bd1: BigDecimal = FromBigInt(10n, 4);
-			const bd2: BigDecimal = FromBigInt(3n, 4);
-			const result = divide_fixed(bd1, bd2);
+			const bd1: BigDecimal = fromBigInt(10n, 4);
+			const bd2: BigDecimal = fromBigInt(3n, 4);
+			const result = divide(bd1, bd2);
 
 			expect(result.divex).toBe(bd1.divex);
 			// Result should be close to 3.333...
@@ -410,11 +410,11 @@ describe('F. Rounding direction for non-representable results', () => {
 			expect(numResult).toBeCloseTo(10 / 3, 1);
 		});
 
-		it('divide_fixed with non-exact result rounds correctly (negative)', () => {
+		it('divide with non-exact result rounds correctly (negative)', () => {
 			// -10 / 3 = -3.333...
-			const bd1: BigDecimal = FromBigInt(-10n, 4);
-			const bd2: BigDecimal = FromBigInt(3n, 4);
-			const result = divide_fixed(bd1, bd2);
+			const bd1: BigDecimal = fromBigInt(-10n, 4);
+			const bd2: BigDecimal = fromBigInt(3n, 4);
+			const result = divide(bd1, bd2);
 
 			expect(result.divex).toBe(bd1.divex);
 			const numResult = toNumber(result);
@@ -429,7 +429,7 @@ describe('F. Rounding direction for non-representable results', () => {
 describe('G. Additional useful tests', () => {
 	describe('isInteger', () => {
 		it('returns true for integer BigDecimals', () => {
-			const intBd: BigDecimal = FromBigInt(42n, 10);
+			const intBd: BigDecimal = fromBigInt(42n, 10);
 			expect(isInteger(intBd)).toBe(true);
 		});
 
@@ -439,7 +439,7 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('handles negative integers correctly', () => {
-			const negInt: BigDecimal = FromBigInt(-100n, 10);
+			const negInt: BigDecimal = fromBigInt(-100n, 10);
 			expect(isInteger(negInt)).toBe(true);
 		});
 
@@ -449,7 +449,7 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('returns true for zero', () => {
-			const zero: BigDecimal = FromBigInt(0n, 10);
+			const zero: BigDecimal = fromBigInt(0n, 10);
 			expect(isInteger(zero)).toBe(true);
 		});
 
@@ -462,12 +462,12 @@ describe('G. Additional useful tests', () => {
 
 	describe('isZero and areEqual', () => {
 		it('isZero returns true for zero', () => {
-			const zero: BigDecimal = FromBigInt(0n, 10);
+			const zero: BigDecimal = fromBigInt(0n, 10);
 			expect(isZero(zero)).toBe(true);
 		});
 
 		it('isZero returns false for non-zero', () => {
-			const nonZero: BigDecimal = FromBigInt(1n, 10);
+			const nonZero: BigDecimal = fromBigInt(1n, 10);
 			expect(isZero(nonZero)).toBe(false);
 		});
 
@@ -492,7 +492,7 @@ describe('G. Additional useful tests', () => {
 
 	describe('toNumber and toBigInt conversions', () => {
 		it('toNumber for large values', () => {
-			const large: BigDecimal = FromBigInt(1000000000n, 10);
+			const large: BigDecimal = fromBigInt(1000000000n, 10);
 			expect(toNumber(large)).toBe(1000000000);
 		});
 
@@ -502,7 +502,7 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('toBigInt for large integer', () => {
-			const large: BigDecimal = FromBigInt(123456789012345n, 10);
+			const large: BigDecimal = fromBigInt(123456789012345n, 10);
 			expect(toBigInt(large)).toBe(123456789012345n);
 		});
 
@@ -512,37 +512,37 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('toBigInt for negative value', () => {
-			const neg: BigDecimal = FromBigInt(-42n, 10);
+			const neg: BigDecimal = fromBigInt(-42n, 10);
 			expect(toBigInt(neg)).toBe(-42n);
 		});
 	});
 
 	describe('ln and exp', () => {
 		it('ln(1) === 0 (approximately)', () => {
-			const one: BigDecimal = FromBigInt(1n, 20);
+			const one: BigDecimal = fromBigInt(1n, 20);
 			expect(ln(one)).toBeCloseTo(0, 10);
 		});
 
 		it('exp(0) === 1 (approximately)', () => {
-			const zero: BigDecimal = FromBigInt(0n, 20);
+			const zero: BigDecimal = fromBigInt(0n, 20);
 			const result = exp(zero, 30);
 			expect(toNumber(result)).toBeCloseTo(1, 5);
 		});
 
 		it('ln(e) approximately equals 1', () => {
-			const e: BigDecimal = FromNumber(Math.E, 30);
+			const e: BigDecimal = fromNumber(Math.E, 30);
 			expect(ln(e)).toBeCloseTo(1, 5);
 		});
 
 		it('log10(10) approximately equals 1', () => {
-			const ten: BigDecimal = FromBigInt(10n, 20);
+			const ten: BigDecimal = fromBigInt(10n, 20);
 			expect(log10(ten)).toBeCloseTo(1, 5);
 		});
 	});
 
 	describe('sqrt', () => {
 		it('sqrt of perfect square integer (4) is exact', () => {
-			const four: BigDecimal = FromBigInt(4n, 20);
+			const four: BigDecimal = fromBigInt(4n, 20);
 			const result = sqrt(four, 30);
 			expect(toNumber(result)).toBeCloseTo(2, 5);
 		});
@@ -554,13 +554,13 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('sqrt(2) is approximately 1.41421', () => {
-			const two: BigDecimal = FromBigInt(2n, 20);
+			const two: BigDecimal = fromBigInt(2n, 20);
 			const result = sqrt(two, 30);
 			expect(toNumber(result)).toBeCloseTo(Math.SQRT2, 5);
 		});
 
 		it('sqrt(0) is 0', () => {
-			const zero: BigDecimal = FromBigInt(0n, 10);
+			const zero: BigDecimal = fromBigInt(0n, 10);
 			const result = sqrt(zero, 20);
 			expect(isZero(result)).toBe(true);
 		});
@@ -568,25 +568,25 @@ describe('G. Additional useful tests', () => {
 
 	describe('powerInt', () => {
 		it('powerInt for small positive exponent', () => {
-			const base: BigDecimal = FromBigInt(2n, 10);
+			const base: BigDecimal = fromBigInt(2n, 10);
 			const result = powerInt(base, 3);
 			expect(toNumber(result)).toBeCloseTo(8, 5);
 		});
 
 		it('powerInt for exponent 0', () => {
-			const base: BigDecimal = FromBigInt(5n, 10);
+			const base: BigDecimal = fromBigInt(5n, 10);
 			const result = powerInt(base, 0);
 			expect(toNumber(result)).toBeCloseTo(1, 5);
 		});
 
 		it('powerInt for exponent 1', () => {
-			const base: BigDecimal = FromBigInt(7n, 10);
+			const base: BigDecimal = fromBigInt(7n, 10);
 			const result = powerInt(base, 1);
 			expect(toNumber(result)).toBeCloseTo(7, 5);
 		});
 
 		it('powerInt for negative exponent', () => {
-			const base: BigDecimal = FromBigInt(2n, 10);
+			const base: BigDecimal = fromBigInt(2n, 10);
 			const result = powerInt(base, -2);
 			expect(toNumber(result)).toBeCloseTo(0.25, 3);
 		});
@@ -594,8 +594,8 @@ describe('G. Additional useful tests', () => {
 
 	describe('mod', () => {
 		it('mod with simple integer values', () => {
-			const a: BigDecimal = FromBigInt(10n, 10);
-			const b: BigDecimal = FromBigInt(3n, 10);
+			const a: BigDecimal = fromBigInt(10n, 10);
+			const b: BigDecimal = fromBigInt(3n, 10);
 			const result = mod(a, b);
 
 			expect(result.divex).toBe(a.divex);
@@ -603,8 +603,8 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('mod with negative dividend', () => {
-			const a: BigDecimal = FromBigInt(-10n, 10);
-			const b: BigDecimal = FromBigInt(3n, 10);
+			const a: BigDecimal = fromBigInt(-10n, 10);
+			const b: BigDecimal = fromBigInt(3n, 10);
 			const result = mod(a, b);
 
 			expect(result.divex).toBe(a.divex);
@@ -613,8 +613,8 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('mod when dividend is smaller than divisor', () => {
-			const a: BigDecimal = FromBigInt(2n, 10);
-			const b: BigDecimal = FromBigInt(5n, 10);
+			const a: BigDecimal = fromBigInt(2n, 10);
+			const b: BigDecimal = fromBigInt(5n, 10);
 			const result = mod(a, b);
 
 			expect(result.divex).toBe(a.divex);
@@ -623,7 +623,7 @@ describe('G. Additional useful tests', () => {
 
 		it('mod with fractional divisor', () => {
 			// 5.0 mod 1.5 = 0.5 (5 = 3*1.5 + 0.5)
-			const a: BigDecimal = FromBigInt(5n, 10);
+			const a: BigDecimal = fromBigInt(5n, 10);
 			const b: BigDecimal = { bigint: 3n, divex: 1 }; // 1.5
 			const result = mod(a, b);
 
@@ -644,7 +644,7 @@ describe('G. Additional useful tests', () => {
 		it('mod with fractional dividend and integer divisor', () => {
 			// 7.5 mod 2 = 1.5 (7.5 = 3*2 + 1.5)
 			const a: BigDecimal = { bigint: 15n, divex: 1 }; // 7.5
-			const b: BigDecimal = FromBigInt(2n, 10);
+			const b: BigDecimal = fromBigInt(2n, 10);
 			const result = mod(a, b);
 
 			expect(result.divex).toBe(a.divex);
@@ -654,35 +654,35 @@ describe('G. Additional useful tests', () => {
 
 	describe('min, max, clamp', () => {
 		it('min returns smaller value', () => {
-			const a: BigDecimal = FromBigInt(5n, 10);
-			const b: BigDecimal = FromBigInt(3n, 10);
+			const a: BigDecimal = fromBigInt(5n, 10);
+			const b: BigDecimal = fromBigInt(3n, 10);
 			expect(areEqual(min(a, b), b)).toBe(true);
 		});
 
 		it('max returns larger value', () => {
-			const a: BigDecimal = FromBigInt(5n, 10);
-			const b: BigDecimal = FromBigInt(3n, 10);
+			const a: BigDecimal = fromBigInt(5n, 10);
+			const b: BigDecimal = fromBigInt(3n, 10);
 			expect(areEqual(max(a, b), a)).toBe(true);
 		});
 
 		it('clamp returns value within range', () => {
-			const val: BigDecimal = FromBigInt(5n, 10);
-			const minVal: BigDecimal = FromBigInt(0n, 10);
-			const maxVal: BigDecimal = FromBigInt(10n, 10);
+			const val: BigDecimal = fromBigInt(5n, 10);
+			const minVal: BigDecimal = fromBigInt(0n, 10);
+			const maxVal: BigDecimal = fromBigInt(10n, 10);
 			expect(areEqual(clamp(val, minVal, maxVal), val)).toBe(true);
 		});
 
 		it('clamp returns min when value is below range', () => {
-			const val: BigDecimal = FromBigInt(-5n, 10);
-			const minVal: BigDecimal = FromBigInt(0n, 10);
-			const maxVal: BigDecimal = FromBigInt(10n, 10);
+			const val: BigDecimal = fromBigInt(-5n, 10);
+			const minVal: BigDecimal = fromBigInt(0n, 10);
+			const maxVal: BigDecimal = fromBigInt(10n, 10);
 			expect(areEqual(clamp(val, minVal, maxVal), minVal)).toBe(true);
 		});
 
 		it('clamp returns max when value is above range', () => {
-			const val: BigDecimal = FromBigInt(15n, 10);
-			const minVal: BigDecimal = FromBigInt(0n, 10);
-			const maxVal: BigDecimal = FromBigInt(10n, 10);
+			const val: BigDecimal = fromBigInt(15n, 10);
+			const minVal: BigDecimal = fromBigInt(0n, 10);
+			const maxVal: BigDecimal = fromBigInt(10n, 10);
 			expect(areEqual(clamp(val, minVal, maxVal), maxVal)).toBe(true);
 		});
 	});
@@ -713,13 +713,13 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('floor of integer is unchanged', () => {
-			const bd: BigDecimal = FromBigInt(5n, 4);
+			const bd: BigDecimal = fromBigInt(5n, 4);
 			const result = floor(bd);
 			expect(areEqual(result, bd)).toBe(true);
 		});
 
 		it('ceil of integer is unchanged', () => {
-			const bd: BigDecimal = FromBigInt(5n, 4);
+			const bd: BigDecimal = fromBigInt(5n, 4);
 			const result = ceil(bd);
 			expect(areEqual(result, bd)).toBe(true);
 		});
@@ -784,7 +784,7 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('leaves integers unchanged', () => {
-			const bd: BigDecimal = FromBigInt(42n, 10);
+			const bd: BigDecimal = fromBigInt(42n, 10);
 			const result = round(bd);
 
 			expect(toExactString(result)).toBe('42');
@@ -792,7 +792,7 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('leaves zero unchanged', () => {
-			const bd: BigDecimal = FromBigInt(0n, 5);
+			const bd: BigDecimal = fromBigInt(0n, 5);
 			const result = round(bd);
 
 			expect(toExactString(result)).toBe('0');
@@ -811,20 +811,20 @@ describe('G. Additional useful tests', () => {
 
 	describe('compare', () => {
 		it('compare returns -1 when first is smaller', () => {
-			const a: BigDecimal = FromBigInt(3n, 10);
-			const b: BigDecimal = FromBigInt(5n, 10);
+			const a: BigDecimal = fromBigInt(3n, 10);
+			const b: BigDecimal = fromBigInt(5n, 10);
 			expect(compare(a, b)).toBe(-1);
 		});
 
 		it('compare returns 0 when equal', () => {
-			const a: BigDecimal = FromBigInt(5n, 10);
-			const b: BigDecimal = FromBigInt(5n, 10);
+			const a: BigDecimal = fromBigInt(5n, 10);
+			const b: BigDecimal = fromBigInt(5n, 10);
 			expect(compare(a, b)).toBe(0);
 		});
 
 		it('compare returns 1 when first is larger', () => {
-			const a: BigDecimal = FromBigInt(7n, 10);
-			const b: BigDecimal = FromBigInt(5n, 10);
+			const a: BigDecimal = fromBigInt(7n, 10);
+			const b: BigDecimal = fromBigInt(5n, 10);
 			expect(compare(a, b)).toBe(1);
 		});
 
@@ -859,15 +859,15 @@ describe('G. Additional useful tests', () => {
 
 	describe('hypot', () => {
 		it('hypot of 3 and 4 is 5', () => {
-			const a: BigDecimal = FromBigInt(3n, 20);
-			const b: BigDecimal = FromBigInt(4n, 20);
+			const a: BigDecimal = fromBigInt(3n, 20);
+			const b: BigDecimal = fromBigInt(4n, 20);
 			const result = hypot(a, b, 30);
 			expect(toNumber(result)).toBeCloseTo(5, 3);
 		});
 
 		it('hypot of 0 and x is x', () => {
-			const zero: BigDecimal = FromBigInt(0n, 20);
-			const x: BigDecimal = FromBigInt(5n, 20);
+			const zero: BigDecimal = fromBigInt(0n, 20);
+			const x: BigDecimal = fromBigInt(5n, 20);
 			const result = hypot(zero, x, 30);
 			expect(toNumber(result)).toBeCloseTo(5, 3);
 		});
@@ -875,7 +875,7 @@ describe('G. Additional useful tests', () => {
 
 	describe('toExactString and toApproximateString', () => {
 		it('toExactString for integer', () => {
-			const bd: BigDecimal = FromBigInt(123n, 10);
+			const bd: BigDecimal = fromBigInt(123n, 10);
 			expect(toExactString(bd)).toBe('123');
 		});
 
@@ -885,65 +885,65 @@ describe('G. Additional useful tests', () => {
 		});
 
 		it('toExactString for negative value', () => {
-			const bd: BigDecimal = FromBigInt(-42n, 10);
+			const bd: BigDecimal = fromBigInt(-42n, 10);
 			expect(toExactString(bd)).toBe('-42');
 		});
 
 		it('toApproximateString produces readable output', () => {
-			const bd: BigDecimal = FromNumber(3.14159, 20);
+			const bd: BigDecimal = fromNumber(3.14159, 20);
 			const str = toApproximateString(bd);
 			// Should be a reasonable approximation
 			expect(parseFloat(str)).toBeCloseTo(3.14159, 3);
 		});
 
 		it('toExactString for zero', () => {
-			const bd: BigDecimal = FromBigInt(0n, 10);
+			const bd: BigDecimal = fromBigInt(0n, 10);
 			expect(toExactString(bd)).toBe('0');
 		});
 	});
 
-	describe('FromNumber and FromBigInt', () => {
-		it('FromNumber creates BigDecimal from positive number', () => {
-			const bd = FromNumber(3.5, 10);
+	describe('fromNumber and fromBigInt', () => {
+		it('fromNumber creates BigDecimal from positive number', () => {
+			const bd = fromNumber(3.5, 10);
 			expect(toNumber(bd)).toBeCloseTo(3.5, 5);
 		});
 
-		it('FromNumber creates BigDecimal from negative number', () => {
-			const bd = FromNumber(-2.25, 10);
+		it('fromNumber creates BigDecimal from negative number', () => {
+			const bd = fromNumber(-2.25, 10);
 			expect(toNumber(bd)).toBeCloseTo(-2.25, 5);
 		});
 
-		it('FromNumber creates BigDecimal from zero', () => {
-			const bd = FromNumber(0, 10);
+		it('fromNumber creates BigDecimal from zero', () => {
+			const bd = fromNumber(0, 10);
 			expect(isZero(bd)).toBe(true);
 		});
 
-		it('FromBigInt creates BigDecimal from positive bigint', () => {
-			const bd = FromBigInt(42n, 10);
+		it('fromBigInt creates BigDecimal from positive bigint', () => {
+			const bd = fromBigInt(42n, 10);
 			expect(toBigInt(bd)).toBe(42n);
 		});
 
-		it('FromBigInt creates BigDecimal from negative bigint', () => {
-			const bd = FromBigInt(-100n, 10);
+		it('fromBigInt creates BigDecimal from negative bigint', () => {
+			const bd = fromBigInt(-100n, 10);
 			expect(toBigInt(bd)).toBe(-100n);
 		});
 
-		it('FromBigInt creates BigDecimal from zero', () => {
-			const bd = FromBigInt(0n, 10);
+		it('fromBigInt creates BigDecimal from zero', () => {
+			const bd = fromBigInt(0n, 10);
 			expect(isZero(bd)).toBe(true);
 		});
 	});
 
 	describe('Default export object', () => {
 		it('default export contains all expected methods', () => {
-			expect(typeof BD.FromNumber).toBe('function');
-			expect(typeof BD.FromBigInt).toBe('function');
+			expect(typeof BD.fromNumber).toBe('function');
+			expect(typeof BD.fromBigInt).toBe('function');
 			expect(typeof BD.add).toBe('function');
 			expect(typeof BD.subtract).toBe('function');
-			expect(typeof BD.multiply_fixed).toBe('function');
-			expect(typeof BD.multiply_floating).toBe('function');
-			expect(typeof BD.divide_fixed).toBe('function');
-			expect(typeof BD.divide_floating).toBe('function');
+			expect(typeof BD.multiply).toBe('function');
+			expect(typeof BD.multiplyFloating).toBe('function');
+			expect(typeof BD.divide).toBe('function');
+			expect(typeof BD.divideFloating).toBe('function');
 			expect(typeof BD.sqrt).toBe('function');
 			expect(typeof BD.pow).toBe('function');
 			expect(typeof BD.toExactString).toBe('function');
@@ -960,38 +960,38 @@ describe('H. Global Precision Configuration', () => {
 	// Teardown: Reset the global precision to the original default after each test
 	// to ensure we don't pollute the state for other tests in this suite.
 	afterEach(() => {
-		BD.SetGlobalPrecision(ORIGINAL_DEFAULT_PRECISION);
+		BD.setDefaultPrecision(ORIGINAL_DEFAULT_PRECISION);
 	});
 
 	it('starts with the documented default precision (23)', () => {
 		// Verify initial state
-		const bd = BD.FromBigInt(1n);
+		const bd = BD.fromBigInt(1n);
 		expect(bd.divex).toBe(23);
 	});
 
-	it('SetGlobalPrecision updates the default for FromBigInt', () => {
-		BD.SetGlobalPrecision(50);
-		const bd = BD.FromBigInt(10n);
+	it('setDefaultPrecision updates the default for fromBigInt', () => {
+		BD.setDefaultPrecision(50);
+		const bd = BD.fromBigInt(10n);
 
 		expect(bd.divex).toBe(50);
 		// Check value is still correct: 10 * 2^50
 		expect(bd.bigint).toBe(10n << 50n);
 	});
 
-	it('SetGlobalPrecision updates the default for FromNumber', () => {
-		BD.SetGlobalPrecision(10);
-		const bd = BD.FromNumber(5);
+	it('setDefaultPrecision updates the default for fromNumber', () => {
+		BD.setDefaultPrecision(10);
+		const bd = BD.fromNumber(5);
 
 		expect(bd.divex).toBe(10);
 	});
 
 	it('fixPrecision updates a BigDecimal to the NEW global precision', () => {
 		// Create a BD with arbitrary precision
-		const bd = BD.FromBigInt(1n, 5);
+		const bd = BD.fromBigInt(1n, 5);
 		expect(bd.divex).toBe(5);
 
 		// Change global settings
-		BD.SetGlobalPrecision(32);
+		BD.setDefaultPrecision(32);
 
 		// Apply fix
 		BD.fixPrecision(bd);
@@ -1000,11 +1000,11 @@ describe('H. Global Precision Configuration', () => {
 	});
 
 	it('hasDefaultPrecision correctly identifies the NEW global precision', () => {
-		BD.SetGlobalPrecision(64);
+		BD.setDefaultPrecision(64);
 
-		const bdMatching = BD.FromBigInt(1n, 64);
-		const bdOldDefault = BD.FromBigInt(1n, 23);
-		const bdRandom = BD.FromBigInt(1n, 10);
+		const bdMatching = BD.fromBigInt(1n, 64);
+		const bdOldDefault = BD.fromBigInt(1n, 23);
+		const bdRandom = BD.fromBigInt(1n, 10);
 
 		expect(BD.hasDefaultPrecision(bdMatching)).toBe(true);
 		expect(BD.hasDefaultPrecision(bdOldDefault)).toBe(false);

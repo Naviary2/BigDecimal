@@ -3,13 +3,13 @@ import Decimal from 'decimal.js';
 import BigNumber from 'bignumber.js';
 
 import {
-	FromNumber,
-	divide_floating,
+	fromNumber,
+	divideFloating,
 	add,
-	multiply_floating,
-	multiply_fixed,
+	multiplyFloating,
+	multiply,
 	sqrt,
-	SetGlobalPrecision,
+	setDefaultPrecision,
 } from '../src/bigdecimal.js';
 
 // CONFIGURATION
@@ -20,18 +20,18 @@ console.log(`\nBenchmarking at ~${DECIMAL_PRECISION} decimal digits (${BINARY_PR
 
 Decimal.set({ precision: DECIMAL_PRECISION });
 BigNumber.config({ DECIMAL_PLACES: DECIMAL_PRECISION });
-SetGlobalPrecision(BINARY_PRECISION);
+setDefaultPrecision(BINARY_PRECISION);
 
 // INPUTS
 // Use "Dense" numbers to force the CPU to use all bits.
 // A = 0.33333... (Repeating bits)
 // B = 1.41421... (Chaotic bits)
-const n_one = FromNumber(1, BINARY_PRECISION);
-const n_three = FromNumber(3, BINARY_PRECISION);
+const n_one = fromNumber(1, BINARY_PRECISION);
+const n_three = fromNumber(3, BINARY_PRECISION);
 
 // Prepare @naviary/bigdecimal inputs
-const bigdecimal_A = divide_floating(n_one, n_three, BINARY_PRECISION);
-const bigdecimal_B = sqrt(FromNumber(2, BINARY_PRECISION), BINARY_PRECISION);
+const bigdecimal_A = divideFloating(n_one, n_three, BINARY_PRECISION);
+const bigdecimal_B = sqrt(fromNumber(2, BINARY_PRECISION), BINARY_PRECISION);
 
 // Prepare decimal.js inputs
 const decimal_A = new Decimal(1).div(3);
@@ -53,7 +53,7 @@ group('Multiplication (0.33 * 1.41)', () => {
 	bench('decimal.js', () => decimal_A.times(decimal_B));
 	bench('bignumber.js', () => bignumber_A.multipliedBy(bignumber_B));
 	bench('@naviary/bigdecimal', () =>
-		multiply_floating(bigdecimal_A, bigdecimal_B, BINARY_PRECISION),
+		multiplyFloating(bigdecimal_A, bigdecimal_B, BINARY_PRECISION),
 	);
 });
 
@@ -61,7 +61,7 @@ group('Division (0.33 / 1.41)', () => {
 	bench('decimal.js', () => decimal_A.div(decimal_B));
 	bench('bignumber.js', () => bignumber_A.div(bignumber_B));
 	bench('@naviary/bigdecimal', () =>
-		divide_floating(bigdecimal_A, bigdecimal_B, BINARY_PRECISION),
+		divideFloating(bigdecimal_A, bigdecimal_B, BINARY_PRECISION),
 	);
 });
 
@@ -74,7 +74,7 @@ group('Feature: Fixed-Point Multiplication', () => {
 		bignumber_A.multipliedBy(bignumber_B).decimalPlaces(DECIMAL_PRECISION),
 	);
 	// My native fixed-point method
-	bench('@naviary/bigdecimal', () => multiply_fixed(bigdecimal_A, bigdecimal_B));
+	bench('@naviary/bigdecimal', () => multiply(bigdecimal_A, bigdecimal_B));
 });
 
 await run();
