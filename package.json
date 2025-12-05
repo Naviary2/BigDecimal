@@ -1,6 +1,6 @@
 {
   "name": "@naviary/bigdecimal",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "High-performance arbitrary-precision decimal arithmetic for JavaScript.",
   "type": "module",
   "main": "dist/index.js",
